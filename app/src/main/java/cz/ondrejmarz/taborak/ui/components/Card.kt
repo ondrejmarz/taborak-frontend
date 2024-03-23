@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import cz.ondrejmarz.taborak.model.TourList
 import cz.ondrejmarz.taborak.model.tourList
+import cz.ondrejmarz.taborak.ui.screens.TourScreen
 import cz.ondrejmarz.taborak.ui.theme.AppTheme
 
 @Composable
@@ -30,13 +30,15 @@ fun DesignedCard(
     startTime: String? = null,
     endTime: String? = null,
     enabled: Boolean? = true,
+    onClickAction: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentWidth(Alignment.CenterHorizontally)
             .padding(10.dp),
-        shape = MaterialTheme.shapes.small
+        shape = MaterialTheme.shapes.small,
+        onClick = onClickAction
     ) {
         Column(
             modifier = Modifier
@@ -118,7 +120,7 @@ fun TimeText(startTime: String?, endTime: String?) {
 fun PreviewTurnusList() {
     AppTheme {
         MaterialTheme {
-            TourList(tourList, Modifier.fillMaxWidth())
+            TourList(tourList, {}, Modifier.fillMaxWidth())
         }
     }
 }
