@@ -2,6 +2,7 @@ package cz.ondrejmarz.taborak.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -17,10 +18,11 @@ fun Section(
     title: String,
     back: Boolean? = false,
     button: String? = null,
+    modifier: Modifier,
     content: @Composable () -> Unit
 ) {
     Column (
-        modifier = Modifier
+        modifier = modifier
             .padding(10.dp)
     ) {
 
@@ -109,7 +111,7 @@ fun Section(
 @Composable
 fun PreviewSection() {
     MaterialTheme {
-        Section(title = "Test", back = true, button = "Další") {
+        Section(title = "Test", back = true, button = "Další", modifier = Modifier.fillMaxWidth()) {
             Text(text = "Obsah")
         }
     }

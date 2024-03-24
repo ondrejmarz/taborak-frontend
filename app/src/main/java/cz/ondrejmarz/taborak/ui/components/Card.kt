@@ -1,6 +1,7 @@
 package cz.ondrejmarz.taborak.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,11 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import cz.ondrejmarz.taborak.model.TourList
-import cz.ondrejmarz.taborak.model.tourList
-import cz.ondrejmarz.taborak.ui.theme.AppTheme
 
 @Composable
 fun DesignedCard(
@@ -30,13 +27,17 @@ fun DesignedCard(
     startTime: String? = null,
     endTime: String? = null,
     enabled: Boolean? = true,
+    button: String? = null,
+    onClickAction: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentWidth(Alignment.CenterHorizontally)
-            .padding(10.dp),
-        shape = MaterialTheme.shapes.small
+            .padding(10.dp)
+            .clickable { onClickAction?.invoke() },
+        shape = MaterialTheme.shapes.small,
+
     ) {
         Column(
             modifier = Modifier
@@ -80,7 +81,7 @@ fun DesignedCard(
 
                 Text(
                     color = MaterialTheme.colorScheme.secondary,
-                    text = if (enabled == true) "Otevřít" else "Požádat o přijetí",
+                    text = if (button == null) "Otevřít" else button,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier
                         .padding(top = 8.dp)
@@ -92,7 +93,7 @@ fun DesignedCard(
 }
 
 @Composable
-fun TitleText(title: String) {
+private fun TitleText(title: String) {
     Text(
         text = title,
         color = MaterialTheme.colorScheme.onTertiaryContainer,
@@ -101,7 +102,7 @@ fun TitleText(title: String) {
 }
 
 @Composable
-fun TimeText(startTime: String?, endTime: String?) {
+private fun TimeText(startTime: String?, endTime: String?) {
     var timeString = ""
     if (startTime != null && endTime != null) timeString = startTime + "––" + endTime
     if (startTime != null && endTime == null) timeString = "od " + startTime
@@ -111,14 +112,4 @@ fun TimeText(startTime: String?, endTime: String?) {
         color = MaterialTheme.colorScheme.onTertiaryContainer,
         style = MaterialTheme.typography.labelSmall,
     )
-}
-
-@Preview
-@Composable
-fun PreviewTurnusList() {
-    AppTheme {
-        MaterialTheme {
-            TourList(tourList, Modifier.fillMaxWidth())
-        }
-    }
 }
