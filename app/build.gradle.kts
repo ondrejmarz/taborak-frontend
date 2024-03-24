@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+    kotlin("plugin.serialization")
 }
 
 android {
@@ -60,6 +61,10 @@ dependencies {
     // or only import the main APIs for the underlying toolkit systems,
     // such as input and measurement/layout
     implementation("androidx.compose.ui:ui")
+
+    // OKHTTP3
+    implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.0")
 
     // Navigation
     implementation("io.github.raamcosta.compose-destinations:core:1.6.15-beta")

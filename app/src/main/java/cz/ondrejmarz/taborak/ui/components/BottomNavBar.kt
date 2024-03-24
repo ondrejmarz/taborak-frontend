@@ -4,7 +4,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
@@ -12,7 +11,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.ripple.rememberRipple
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -24,17 +22,16 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
+import com.ramcosta.composedestinations.spec.Direction
 import cz.ondrejmarz.taborak.AppDestination
-import cz.ondrejmarz.taborak.appTabRowScreens
 import java.util.Locale
 
 @Composable
-fun AppTabRow(
+fun BottomNavBar(
+    tourId: Long,
     allScreens: List<AppDestination>,
-    onTabSelected: (AppDestination) -> Unit,
-    currentScreen: AppDestination
+    onItemSelected: (Direction) -> Unit,
+    currentScreen: String
 ) {
     Surface(
         Modifier.fillMaxWidth()
@@ -44,8 +41,10 @@ fun AppTabRow(
                 AppTab(
                     text = screen.route,
                     icon = screen.icon,
-                    onSelected = { onTabSelected(screen) },
-                    selected = currentScreen == screen
+                    onSelected = {
+                        onItemSelected(screen.destination(tourId))
+                    },
+                    selected = currentScreen == screen.route
                 )
             }
         }
