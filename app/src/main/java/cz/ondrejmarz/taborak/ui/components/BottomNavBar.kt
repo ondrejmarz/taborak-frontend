@@ -8,10 +8,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
 import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -28,7 +28,7 @@ import java.util.Locale
 
 @Composable
 fun BottomNavBar(
-    tourId: Long,
+    tourId: String,
     allScreens: List<AppDestination>,
     onItemSelected: (Direction) -> Unit,
     currentScreen: String
@@ -42,7 +42,7 @@ fun BottomNavBar(
                     text = screen.route,
                     icon = screen.icon,
                     onSelected = {
-                        onItemSelected(screen.destination(tourId))
+                        /*onItemSelected(screen.destination(tourId))*/
                     },
                     selected = currentScreen == screen.route
                 )

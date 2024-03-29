@@ -16,17 +16,17 @@ val typography = Typography(
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 24.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.sp
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 28.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.1.sp
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.ExtraBold,
-        fontSize = 20.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.2.sp
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 28.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.1.sp
     ),
     bodySmall = TextStyle(
         fontFamily = FontFamily.Default,
