@@ -36,14 +36,14 @@ fun TasksScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            Section(title = "Přiřazené úkoly", modifier = Modifier.padding(innerPadding)) {
+            Section(title = "Přiřazené úkoly") {
                 DesignedCard(
                     title = "Momentálně nemáš žádné přiřazené úkoly",
                     description = "Můžeš požádat hlavní vedoucí, nebo jeho zástupce, aby ti úkoly přidělili."
                 )
             }
 
-            Section(title = "Vlastní úkoly", modifier = Modifier.padding(innerPadding)) {
+            Section(title = "Vlastní úkoly") {
                 DesignedCard(
                     title = "Momentálně nemáš žádné vlastní úkoly",
                     description = "Můžeš si vytvořit vlastní úkoly pomocí tlačítka VYTVOŘIT."

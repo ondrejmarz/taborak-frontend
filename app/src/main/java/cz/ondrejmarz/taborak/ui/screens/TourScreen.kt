@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.appTabRowScreens
+import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputDayString
 import cz.ondrejmarz.taborak.data.viewmodel.factory.TourViewModelFactory
 import cz.ondrejmarz.taborak.ui.components.BottomNavBar
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
@@ -39,7 +40,7 @@ fun TourScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            Section(title = "Aktivní ankety", modifier = Modifier.padding(innerPadding)) {
+            Section(title = "Aktivní ankety") {
                 DesignedCard(
                     title = "Turnus momentálně nemá žádné aktivní ankety",
                     description = "Anketu může vytvořit hlavní vedoucí, nebo jeho zástupci."
@@ -48,9 +49,9 @@ fun TourScreen(
 
             if (currentTour != null) {
 
-                Section(title = "Doba trvání", modifier = Modifier.padding(innerPadding)) {
+                Section(title = "Doba trvání") {
                     DesignedCard(
-                        title = "od " + currentTour.startDate + " do " + currentTour.endDate
+                        title = "od " + formatDateStringToOutputDayString(currentTour.startDate) + " do " + formatDateStringToOutputDayString(currentTour.endDate)
                     )
                 }
             }

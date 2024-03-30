@@ -37,7 +37,7 @@ fun ParticipantsScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            Section(title = "Účastníci", modifier = Modifier.padding(innerPadding)) {
+            Section(title = "Účastníci") {
                 DesignedCard(
                     title = "Turnus momentálně nemá žádné účastníky",
                     description = "Seznam účastníků můžete nahrát pomocí tlačítka níže."

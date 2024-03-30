@@ -35,7 +35,7 @@ fun SettingsScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            Section(title = "Nastavení", modifier = Modifier.padding(innerPadding)) {
+            Section(title = "Nastavení") {
                 DesignedCard(
                     title = "Osobní nastavení",
                     topic = "jméno: František Dobrota",

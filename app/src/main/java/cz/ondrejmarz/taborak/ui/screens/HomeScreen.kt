@@ -39,27 +39,14 @@ fun HomeScreen(
 
     Section(
         title = "Turnusy",
-        modifier = Modifier
-            .fillMaxWidth()
+        onButtonClick = onCreateTourClick,
+        buttonTitle = "Přidat"
     ) {
-
-        Column(
-            modifier = Modifier
-                .padding(top = 5.dp, start = 20.dp, end = 20.dp)
-        ) {
-            Button(
-                onClick = { onCreateTourClick() },
-                modifier = Modifier
-                    .align(alignment = Alignment.End)
-            ) {
-                Text(text = "Přidat")
-            }
-            TourList(
-                tourList,
-                onTourSelected = { id: String ->
-                    onTourClick(id) },
-                Modifier.fillMaxWidth()
-            )
-        }
+        TourList(
+            tourList,
+            onTourSelected = { id: String ->
+                onTourClick(id) },
+            Modifier.fillMaxWidth()
+        )
     }
 }
