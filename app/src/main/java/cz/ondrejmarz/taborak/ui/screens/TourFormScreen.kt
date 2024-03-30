@@ -115,16 +115,20 @@ fun TourFormScreen(
                 )
             }
 
-
             Button(
-                onClick = { tourModelView.createNewTour(
-                    Tour(
-                    title = title,
-                    description = description,
-                    topic = topic,
-                    endDate = "2024-03-28T23:00:00.242+00:00",
-                    startDate = "2024-03-28T23:00:00.242+00:00")
-                ) },
+                onClick = {
+                    if (title != "") {
+                        tourModelView.createNewTour(
+                            Tour(
+                                title = title,
+                                description = description,
+                                topic = topic,
+                                endDate = "2024-03-28T23:00:00.242+00:00",
+                                startDate = "2024-03-28T23:00:00.242+00:00"
+                            )
+                        )
+                    }
+                    navController.popBackStack() },
                 modifier = Modifier
                     .padding(top = 20.dp)
                     .align(alignment = Alignment.End)

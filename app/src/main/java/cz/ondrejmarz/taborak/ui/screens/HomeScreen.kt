@@ -37,30 +37,29 @@ fun HomeScreen(
     val tourListState: State<List<Tour>?> = tourModelView.tours.observeAsState()
     val tourList: List<Tour>? = tourListState.value
 
-    Column(
+    Section(
+        title = "Turnusy",
         modifier = Modifier
-            .padding(top = 5.dp, start = 20.dp, end = 20.dp)
+            .fillMaxWidth()
     ) {
-        Section(
-            title = "Turnusy",
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .padding(top = 5.dp, start = 20.dp, end = 20.dp)
         ) {
-            if (tourList != null) {
-                TourList(
-                    tourList,
-                    onTourSelected = { id: String ->
-                        onTourClick(id)
-                    },
-                    Modifier.fillMaxWidth())
+            Button(
+                onClick = { onCreateTourClick() },
+                modifier = Modifier
+                    .align(alignment = Alignment.End)
+            ) {
+                Text(text = "Přidat")
             }
-        }
-        Button(
-            onClick = { onCreateTourClick() },
-            modifier = Modifier
-                .align(alignment = Alignment.End)
-        ) {
-            Text(text = "Přidat")
+            TourList(
+                tourList,
+                onTourSelected = { id: String ->
+                    onTourClick(id) },
+                Modifier.fillMaxWidth()
+            )
         }
     }
 }

@@ -113,7 +113,7 @@ fun AppNavHost(
                     }
                 },
                 onTourClick = { id: String ->
-                    navController.navigate("tour" + id)
+                    navController.navigate("tour/" + id )
                 },
                 onCreateTourClick = {
                     navController.navigate("tour_form")
@@ -132,9 +132,10 @@ fun AppNavHost(
                 type = NavType.StringType
             })
         ) { backStackEntry ->
-            val tourId = backStackEntry.arguments?.getString("userId")
+            val tourId = backStackEntry.arguments?.getString("tourId")
             tourId?.run { TourScreen(tourId = tourId, navController) }
         }
+
         composable(
             route = Participants.route,
             arguments = listOf(navArgument("tourId") {

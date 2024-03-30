@@ -46,7 +46,9 @@ fun DesignedCard(
                 .padding(10.dp)
                 .padding(10.dp)
         ) {
-
+            TitleText(title)
+            TimeText(startTime = startTime, endTime = endTime)
+            /*
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -55,7 +57,7 @@ fun DesignedCard(
             ) {
                 TitleText(title)
                 TimeText(startTime = startTime, endTime = endTime)
-            }
+            }*/
 
             if (topic != null) {
 
