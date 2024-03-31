@@ -72,6 +72,8 @@ fun DesignedCard(
                         .align(Alignment.End)
                 )
             }
+            else if (topic != null || description != null)
+                Spacer(modifier = Modifier.height(10.dp))
 
             if (topic != null) {
 

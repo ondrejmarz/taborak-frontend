@@ -2,6 +2,7 @@ package cz.ondrejmarz.taborak.ui.components
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,7 +33,7 @@ import java.util.Locale
 fun BottomNavBar(
     tourId: String,
     allScreens: List<AppDestination>,
-    onItemSelected: (Direction) -> Unit,
+    onItemSelected: (String) -> Unit,
     currentScreen: String
 ) {
     Surface(
@@ -40,7 +41,7 @@ fun BottomNavBar(
     ) {
         Row(
             Modifier.selectableGroup(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             allScreens.forEach { screen ->
@@ -48,7 +49,7 @@ fun BottomNavBar(
                     text = screen.route,
                     icon = screen.icon,
                     onSelected = {
-                        /*onItemSelected(screen.destination(tourId))*/
+                        onItemSelected( screen.route + "/" + tourId )
                     },
                     selected = currentScreen == screen.route
                 )
@@ -80,10 +81,11 @@ private fun AppTab(
             )
             .clearAndSetSemantics { contentDescription = text }
     ) {
-        Icon(imageVector = icon, contentDescription = text)
-        if (selected) {
-            Spacer(Modifier.width(12.dp))
-            Text(text.uppercase(Locale.getDefault()))
+        Column {
+            Icon(imageVector = icon, contentDescription = text)
+            if (selected) {
+                Text(text.uppercase(Locale.getDefault()))
+            }
         }
     }
 }

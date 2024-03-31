@@ -24,8 +24,9 @@ fun SettingsScreen(
             BottomNavBar(
                 tourId = tourId,
                 allScreens = appTabRowScreens,
-                onItemSelected = { /*dir ->
-                    navigator.navigate( dir )*/
+                onItemSelected = { route ->
+                    navController.popBackStack()
+                    navController.navigate(route)
                 },
                 currentScreen = "Nastavení"
             )
@@ -35,7 +36,11 @@ fun SettingsScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            Section(title = "Nastavení") {
+            Section(
+                title = "Nastavení",
+                onButtonClick = { navController.popBackStack() },
+                buttonTitle = "Odejít") {
+
                 DesignedCard(
                     title = "Osobní nastavení",
                     topic = "jméno: František Dobrota",

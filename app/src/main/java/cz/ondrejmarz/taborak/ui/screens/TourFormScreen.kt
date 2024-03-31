@@ -5,16 +5,18 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -102,16 +104,16 @@ fun TourFormScreen(
                     label = { Text("Od") },
                     modifier = Modifier
                         .weight(1f)
-                        .padding(10.dp)
                 )
 
+                Spacer(modifier = Modifier.width(20.dp))
+                
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Do") },
                     modifier = Modifier
                         .weight(1f)
-                        .padding(10.dp)
                 )
             }
 
@@ -131,7 +133,8 @@ fun TourFormScreen(
                     navController.popBackStack() },
                 modifier = Modifier
                     .padding(top = 20.dp)
-                    .align(alignment = Alignment.End)
+                    .align(alignment = Alignment.End),
+                shape = MaterialTheme.shapes.small
             ) {
                 Text(text = "Vytvořit")
             }

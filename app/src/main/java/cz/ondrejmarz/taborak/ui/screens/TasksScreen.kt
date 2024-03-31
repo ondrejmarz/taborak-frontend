@@ -25,8 +25,9 @@ fun TasksScreen(
             BottomNavBar(
                 tourId = tourId,
                 allScreens = appTabRowScreens,
-                onItemSelected = { /*dir ->
-                    navigator.navigate( dir )*/
+                onItemSelected = { route ->
+                    navController.popBackStack()
+                    navController.navigate(route)
                 },
                 currentScreen = "Úkoly"
             )

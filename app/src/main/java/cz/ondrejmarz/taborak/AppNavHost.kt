@@ -116,7 +116,7 @@ fun AppNavHost(
                     navController.navigate("tour/" + id )
                 },
                 onCreateTourClick = {
-                    navController.navigate("tour_form")
+                    navController.navigateSingleTopTo("tour_form")
                 }
             )
         }
@@ -127,7 +127,7 @@ fun AppNavHost(
 
 
         composable(
-            route = Tour.route,
+            route = Tour.route + "/{tourId}",
             arguments = listOf(navArgument("tourId") {
                 type = NavType.StringType
             })
@@ -137,39 +137,39 @@ fun AppNavHost(
         }
 
         composable(
-            route = Participants.route,
+            route = Participants.route + "/{tourId}",
             arguments = listOf(navArgument("tourId") {
                 type = NavType.StringType
             })
         ) { backStackEntry ->
-            val tourId = backStackEntry.arguments?.getString("userId")
+            val tourId = backStackEntry.arguments?.getString("tourId")
             tourId?.run { ParticipantsScreen(tourId = tourId, navController) }
         }
         composable(
-            route = Calendar.route,
+            route = Calendar.route + "/{tourId}",
             arguments = listOf(navArgument("tourId") {
                 type = NavType.StringType
             })
         ) { backStackEntry ->
-            val tourId = backStackEntry.arguments?.getString("userId")
+            val tourId = backStackEntry.arguments?.getString("tourId")
             tourId?.run { CalendarScreen(tourId = tourId, navController = navController) }
         }
         composable(
-            route = Tasks.route,
+            route = Tasks.route + "/{tourId}",
             arguments = listOf(navArgument("tourId") {
                 type = NavType.StringType
             })
         ) { backStackEntry ->
-            val tourId = backStackEntry.arguments?.getString("userId")
+            val tourId = backStackEntry.arguments?.getString("tourId")
             tourId?.run { TasksScreen(tourId = tourId, navController = navController) }
         }
         composable(
-            route = Settings.route,
+            route = Settings.route + "/{tourId}",
             arguments = listOf(navArgument("tourId") {
                 type = NavType.StringType
             })
         ) { backStackEntry ->
-            val tourId = backStackEntry.arguments?.getString("userId")
+            val tourId = backStackEntry.arguments?.getString("tourId")
             tourId?.run { SettingsScreen(tourId = tourId, navController = navController) }
         }
     }

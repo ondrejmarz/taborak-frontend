@@ -30,31 +30,31 @@ object Home : AppDestination {
 object Tour : AppDestination {
     override val icon = Icons.Filled.People
     override val name = "Turnus"
-    override val route = "tour/{tourId}"
+    override val route = "tour"
 }
 
 object Participants : AppDestination {
     override val icon = Icons.Filled.Groups
     override val name = "Účastníci"
-    override val route = "participants/{tourId}"
+    override val route = "participants"
 }
 
 object Calendar : AppDestination {
     override val icon = Icons.Filled.CalendarToday
     override val name = "Kalendář"
-    override val route = "calendar/{tourId}"
+    override val route = "calendar"
 }
 
 object Tasks : AppDestination {
     override val icon = Icons.Filled.Checklist
     override val name = "Úkoly"
-    override val route = "tasks/{tourId}"
+    override val route = "tasks"
 }
 
 object Settings : AppDestination {
     override val icon = Icons.Filled.Settings
     override val name = "Nastavení"
-    override val route = "settings/{tourId}"
+    override val route = "settings"
 }
 
 // Screens to be displayed in the bottom tab row
