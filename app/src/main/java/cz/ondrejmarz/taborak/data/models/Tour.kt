@@ -33,5 +33,7 @@ data class Tour (
     val topic: String? = null,
     val description: String? = null,
     val startDate: String? = null,
-    val endDate: String? = null
+    val endDate: String? = null,
+    val members: List<String>? = null,
+    val applications: List<String>? = null
 )

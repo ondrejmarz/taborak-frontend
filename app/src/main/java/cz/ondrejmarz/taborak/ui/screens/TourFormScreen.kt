@@ -38,7 +38,8 @@ import java.util.Date
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TourFormScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    userId: String? = null,
 ) {
     val tourModelView = TourViewModelFactory.getTourViewModel()
 
@@ -99,8 +100,8 @@ fun TourFormScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = "",
+                    onValueChange = { },
                     label = { Text("Od") },
                     modifier = Modifier
                         .weight(1f)
@@ -109,8 +110,8 @@ fun TourFormScreen(
                 Spacer(modifier = Modifier.width(20.dp))
                 
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = "",
+                    onValueChange = { },
                     label = { Text("Do") },
                     modifier = Modifier
                         .weight(1f)
@@ -119,14 +120,15 @@ fun TourFormScreen(
 
             Button(
                 onClick = {
-                    if (title != "") {
+                    if (title != "" && userId != null) {
                         tourModelView.createNewTour(
                             Tour(
                                 title = title,
                                 description = description,
                                 topic = topic,
-                                endDate = "2024-03-28T23:00:00.242+00:00",
-                                startDate = "2024-03-28T23:00:00.242+00:00"
+                                endDate = "2024-03-28T23:12:00.242+00:00",
+                                startDate = "2024-03-28T23:10:00.242+00:00",
+                                members = listOf(userId)
                             )
                         )
                     }

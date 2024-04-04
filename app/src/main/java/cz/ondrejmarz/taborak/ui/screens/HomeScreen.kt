@@ -21,11 +21,11 @@ import cz.ondrejmarz.taborak.ui.components.TourList
 import cz.ondrejmarz.taborak.data.viewmodel.factory.TourViewModelFactory
 import cz.ondrejmarz.taborak.ui.components.Section
 
-@OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
     navController: NavHostController,
+    userId: String? = "",
     onLogoutClick: () -> Unit,
     onTourClick: (String) -> Unit,
     onCreateTourClick: () -> Unit,
@@ -44,6 +44,7 @@ fun HomeScreen(
     ) {
         TourList(
             tourList,
+            userId,
             onTourSelected = { id: String ->
                 onTourClick(id) },
             Modifier.fillMaxWidth()

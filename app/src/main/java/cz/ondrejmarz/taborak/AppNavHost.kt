@@ -41,7 +41,7 @@ fun AppNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Home.route,
+        startDestination = "sign_in",
     ) {
 
         val googleAuthUiClient by lazy {
@@ -107,6 +107,7 @@ fun AppNavHost(
             val viewModel = viewModel<SignInViewModel>()
             HomeScreen(
                 navController,
+                googleAuthUiClient.getSignInUser()?.userId,
                 onLogoutClick = {
                     viewModel.viewModelScope.launch {
                         googleAuthUiClient.signOut()
@@ -122,7 +123,10 @@ fun AppNavHost(
         }
 
         composable(route = "tour_form") {
-            TourFormScreen(navController)
+            TourFormScreen(
+                navController,
+                googleAuthUiClient.getSignInUser()?.userId
+            )
         }
 
 

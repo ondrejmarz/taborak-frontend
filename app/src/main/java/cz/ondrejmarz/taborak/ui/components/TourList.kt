@@ -13,20 +13,27 @@ import cz.ondrejmarz.taborak.ui.theme.AppTheme
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TourList(tourList: List<Tour>?, onTourSelected: (String) -> Unit, modifier: Modifier = Modifier) {
+fun TourList(
+    tourList: List<Tour>?,
+    userId: String?,
+    onTourSelected: (String) -> Unit,
+    modifier: Modifier = Modifier) {
     if (tourList != null) {
         LazyColumn(modifier = modifier) {
             itemsIndexed(tourList) { index, tour ->
-                DesignedCard(
-                    title = if (tour.title != null) tour.title else "Nepojmenovaný turnus",
-                    topic = tour.topic,
-                    description = tour.description,
-                    startTime = tour.startDate,
-                    endTime = tour.endDate,
-                    enabled = true,
-                    button = "Otevřít",
-                    onClickAction = { onTourSelected(if (tour.tourId != null) tour.tourId else "" ) }
-                )
+                val isMember = tour.members?.contains(userId)
+                if (tour.tourId != null) {
+                    DesignedCard(
+                        title = if (tour.title != null) tour.title else "Nepojmenovaný turnus",
+                        topic = tour.topic,
+                        description = tour.description,
+                        startTime = tour.startDate,
+                        endTime = tour.endDate,
+                        enabled = isMember,
+                        button = "Otevřít",
+                        onClickAction = { if (isMember == true) { onTourSelected(tour.tourId) } }
+                    )
+                }
             }
         }
     }
