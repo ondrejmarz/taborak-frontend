@@ -2,8 +2,15 @@ package cz.ondrejmarz.taborak.data.api
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import cz.ondrejmarz.taborak.auth.UserData
+import cz.ondrejmarz.taborak.auth.UserRole
 import cz.ondrejmarz.taborak.data.models.Tour
 import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import okhttp3.Call
@@ -18,84 +25,32 @@ import java.io.IOException
 object ApiClient {
 
     private val client = OkHttpClient()
-    private val urlPath = "example.com"
-    var responseBodyOld = """
-                                    [
-                                      {
-                                        "tourId": 1,
-                                        "name": "Tour 1",
-                                        "topic": "Topic 1",
-                                        "description": "Description 1",
-                                        "startDate": "2024-03-23T08:00:00",
-                                        "endDate": "2024-03-24T18:00:00"
-                                      },
-                                      {
-                                        "tourId": 2,
-                                        "name": "Tour 2",
-                                        "topic": "Topic 2",
-                                        "description": "Description 2",
-                                        "startDate": "2024-03-25T10:00:00",
-                                        "endDate": "2024-03-26T20:00:00"
-                                      }
-                                    ]
-                                   """
-    val responseBodyNew = """
-                                    [
-                                      {
-                                        "tourId": 1,
-                                        "name": "Tour 1",
-                                        "topic": "Topic 1",
-                                        "description": "Description 1",
-                                        "startDate": "2024-03-23T08:00:00",
-                                        "endDate": "2024-03-24T18:00:00"
-                                      },
-                                      {
-                                        "tourId": 2,
-                                        "name": "Tour 2",
-                                        "topic": "Topic 2",
-                                        "description": "Description 2",
-                                        "startDate": "2024-03-25T10:00:00",
-                                        "endDate": "2024-03-26T20:00:00"
-                                      },
-                                      {
-                                        "tourId": 3,
-                                        "name": "Tour 3",
-                                        "topic": "Topic 3",
-                                        "description": "Description 3",
-                                        "startDate": "2024-03-27T12:00:00",
-                                        "endDate": "2024-03-28T22:00:00"
-                                      }
-                                    ]
-                                   """
+    private val urlPath = "http://10.0.2.2:8080"
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun fetchTours(onSuccess: (String) -> Unit) {
+        runBlocking {
+            launch(Dispatchers.IO) {
+                try {
+                    val request = Request.Builder()
+                        .url(urlPath + "/tours")
+                        .build()
 
-        onSuccess(responseBodyOld)
+                    val response = client.newCall(request).execute()
+                    if (!response.isSuccessful) throw IOException("Unexpected code $response")
 
-        /*
-        val request = Request.Builder()
-            .url(urlPath + "/tours")
-            .build()
+                    val responseBody: String = response.body?.string() ?: ""
+                    onSuccess(responseBody)
 
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                e.printStackTrace()
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
             }
-
-            override fun onResponse(call: Call, response: Response) {
-                val responseBody = response.body.toString()
-                viewModel.fetchedTours(responseBody)
-            }
-        })*/
+        }
     }
 
     fun createTour(newTour: Tour, onSuccess: () -> Unit) {
 
-        responseBodyOld = responseBodyNew
-        onSuccess()
-
-        /*
         val jsonBody = Json.encodeToString(newTour)
 
         val request = Request.Builder()
@@ -115,6 +70,229 @@ object ApiClient {
                     println("Request failed with code ${response.code}")
                 }
             }
-        })*/
+        })
+    }
+
+    fun saveUser(user: UserData, onSuccess: () -> Unit) {
+
+        val jsonBody = Json.encodeToString(user)
+
+        val request = Request.Builder()
+            .url(urlPath + "/users")
+            .post(jsonBody.toRequestBody("application/json".toMediaType()))
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                println(e.message ?: "Unknown error")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    println("Request failed with code ${response.code}")
+                }
+            }
+        })
+    }
+
+    fun getRole(tourId: String, userId: String, onSuccess: (String) -> Unit) {
+
+        val request = Request.Builder()
+            .url(urlPath + "/tours/" + tourId + "/members/" + userId)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                println(e.message ?: "Unknown error")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    val responseBody: String = response.body?.string() ?: ""
+                    onSuccess(responseBody)
+                } else {
+                    println("Request failed with code ${response.code}")
+                }
+            }
+        })
+    }
+
+    fun deleteTour(tourId: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+
+        val request = Request.Builder()
+            .url(urlPath + "/tours/" + tourId)
+            .delete()
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                onFailure(e.message ?: "Unknown error")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    onFailure("Request failed with code ${response.code}")
+                }
+            }
+        })
+    }
+
+    fun fetchAllMembers(tourId: String, onSuccess: (String) -> Unit) {
+        runBlocking {
+            launch(Dispatchers.IO) {
+                try {
+
+                    val request = Request.Builder()
+                        .url(urlPath + "/tours/" + tourId + "/members")
+                        .build()
+
+                    val response = client.newCall(request).execute()
+                    if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+                    val responseBody: String = response.body?.string() ?: ""
+                    onSuccess(responseBody)
+
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    fun fetchAllApplications(tourId: String, onSuccess: (String) -> Unit) {
+        runBlocking {
+            launch(Dispatchers.IO) {
+                try {
+
+                    val request = Request.Builder()
+                        .url(urlPath + "/tours/" + tourId + "/applications")
+                        .build()
+
+                    val response = client.newCall(request).execute()
+                    if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+                    val responseBody: String = response.body?.string() ?: ""
+                    onSuccess(responseBody)
+
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    fun addTourMember(tourId: String, userId: String, onSuccess: () -> Unit) {
+
+        val request = Request.Builder()
+            .url(urlPath + "/tours/" + tourId + "/members/" + userId)
+            .put("".toRequestBody("application/json".toMediaType()))
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                println(e.message ?: "Unknown error")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    println("Request failed with code ${response.code}")
+                }
+            }
+        })
+    }
+
+    fun deleteTourMember(tourId: String, userId: String, onSuccess: () -> Unit) {
+
+        val request = Request.Builder()
+            .url(urlPath + "/tours/" + tourId + "/members/" + userId)
+            .delete()
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                println(e.message ?: "Unknown error")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    println("Request failed with code ${response.code}")
+                }
+            }
+        })
+    }
+
+    fun addTourApplication(tourId: String, userId: String, onSuccess: () -> Unit) {
+
+        val request = Request.Builder()
+            .url(urlPath + "/tours/" + tourId + "/applications/" + userId)
+            .put("".toRequestBody("application/json".toMediaType()))
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                println(e.message ?: "Unknown error")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    println("Request failed with code ${response.code}")
+                }
+            }
+        })
+    }
+
+    fun deleteTourApplication(tourId: String, userId: String, onSuccess: () -> Unit) {
+        val request = Request.Builder()
+            .url(urlPath + "/tours/" + tourId + "/applications/" + userId)
+            .delete()
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                println(e.message ?: "Unknown error")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    println("Request failed with code ${response.code}")
+                }
+            }
+        })
+    }
+
+    fun setTourRole(tourId: String, userId: String, role: String, onSuccess: () -> Unit) {
+
+        println(role + " pro " + userId + " v tour " + tourId)
+
+        val request = Request.Builder()
+            .url(urlPath + "/tours/" + tourId + "/members/" + userId + "/role")
+            .put(role.toRequestBody("application/json".toMediaType()))
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                println(e.message ?: "Unknown error")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    onSuccess()
+                } else {
+                    println("Request failed with code ${response.code}")
+                }
+            }
+        })
     }
 }

@@ -28,7 +28,18 @@ class TourViewModel : ViewModel() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun createNewTour(newTour: Tour) {
-        ApiClient.createTour(newTour, { fetchTours() })
+        ApiClient.createTour(
+            newTour,
+            onSuccess = { fetchTours() }
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun deleteTour(tourId: String) {
+        ApiClient.deleteTour(
+            tourId,
+            onSuccess = { fetchTours() },
+            onFailure = { e -> println(e) } )
     }
 
     private fun createTourList(responseBody: String): List<Tour> {

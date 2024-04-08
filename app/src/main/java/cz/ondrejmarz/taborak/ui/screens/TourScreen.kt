@@ -7,21 +7,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.ramcosta.composedestinations.annotation.Destination
-import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.appTabRowScreens
-import cz.ondrejmarz.taborak.data.utility.formatLocalDateTime
+import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputDayString
 import cz.ondrejmarz.taborak.data.viewmodel.factory.TourViewModelFactory
 import cz.ondrejmarz.taborak.ui.components.BottomNavBar
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.Section
 
 @RequiresApi(Build.VERSION_CODES.O)
-@Destination
 @Composable
 fun TourScreen(
-    tourId: Long,
-    navigator: DestinationsNavigator
+    tourId: String,
+    navController: NavHostController
 ) {
     val tourModelView = TourViewModelFactory.getTourViewModel()
     val currentTour = tourModelView.tours.value?.find { it.tourId == tourId }
@@ -31,8 +29,9 @@ fun TourScreen(
             BottomNavBar(
                 tourId = tourId,
                 allScreens = appTabRowScreens,
-                onItemSelected = { dir ->
-                    navigator.navigate( dir )
+                onItemSelected = { route ->
+                    navController.popBackStack()
+                    navController.navigate(route)
                 },
                 currentScreen = "Turnus"
             )
@@ -42,7 +41,7 @@ fun TourScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            Section(title = "Aktivní ankety", modifier = Modifier.padding(innerPadding)) {
+            Section(title = "Aktivní ankety") {
                 DesignedCard(
                     title = "Turnus momentálně nemá žádné aktivní ankety",
                     description = "Anketu může vytvořit hlavní vedoucí, nebo jeho zástupci."
@@ -51,10 +50,9 @@ fun TourScreen(
 
             if (currentTour != null) {
 
-                Section(title = "Doba trvání", modifier = Modifier.padding(innerPadding)) {
+                Section(title = "Doba trvání") {
                     DesignedCard(
-                        title = "od " + formatLocalDateTime(currentTour.startDate)
-                                + "2024 do " + formatLocalDateTime(currentTour.endDate)
+                        title = "od " + formatDateStringToOutputDayString(currentTour.startDate) + " do " + formatDateStringToOutputDayString(currentTour.endDate)
                     )
                 }
             }
