@@ -8,11 +8,15 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import androidx.lifecycle.ViewModel
 import cz.ondrejmarz.taborak.auth.UserData
+import cz.ondrejmarz.taborak.auth.UserRole
 import cz.ondrejmarz.taborak.data.api.ApiClient
 import cz.ondrejmarz.taborak.data.models.Tour
 import kotlinx.serialization.SerializationException
 
 class UserViewModel : ViewModel() {
+
+    private val _role = MutableLiveData<UserRole>()
+    val role: LiveData<UserRole> = _role
 
     private val _members = MutableLiveData<List<UserData>>()
     val members: LiveData<List<UserData>> = _members
@@ -33,8 +37,15 @@ class UserViewModel : ViewModel() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun acceptApplication(tourId: String, user: UserData) {
-        ApiClient.addTourMember(tourId, user, { fetchAllUsersFromTour(tourId) })
+    fun checkUser(user: UserData?) {
+        if (user != null)
+            ApiClient.saveUser(user, { })
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun acceptApplication(tourId: String, userId: String?) {
+        if (userId != null)
+            ApiClient.addTourMember(tourId, userId, { fetchAllUsersFromTour(tourId) })
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -43,8 +54,20 @@ class UserViewModel : ViewModel() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
+    fun sendApplication(tourId: String, userId: String?) {
+        if (userId != null)
+            ApiClient.addTourApplication(tourId, userId, { })
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
     fun deleteApplication(tourId: String, userId: String) {
         ApiClient.deleteTourApplication(tourId, userId, { fetchAllUsersFromTour(tourId) })
+    }
+
+    fun loadTourUserRole(tourId: String, userId: String) {
+        ApiClient.getRole(tourId, userId, { responseBody: String ->
+            _role.postValue( UserRole.fromString(responseBody))
+        })
     }
 
     private fun createUserList(responseBody: String): List<UserData> {
@@ -56,5 +79,11 @@ class UserViewModel : ViewModel() {
         }
     }
 
-
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun setTourRole(tourId: String, userId: String, role: UserRole) {
+        ApiClient.setTourRole(tourId, userId, role.role, {
+            fetchAllUsersFromTour(tourId)
+            loadTourUserRole(tourId, userId)
+        })
+    }
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,7 +46,10 @@ fun SignInScreen(
                 .padding(20.dp)
         ) {
             Text(text = "Zde bude logo")
-            Button(onClick = onSignInClick) {
+            Button(
+                shape = MaterialTheme.shapes.small,
+                onClick = onSignInClick
+            ) {
                 Text(text = "Přihlásit se")
             }
         }

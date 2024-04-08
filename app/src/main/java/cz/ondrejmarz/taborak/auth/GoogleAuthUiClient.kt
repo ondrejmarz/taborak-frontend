@@ -3,6 +3,7 @@ package cz.ondrejmarz.taborak.auth
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
+import android.provider.Settings.Global.getString
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.BeginSignInRequest.GoogleIdTokenRequestOptions
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -82,7 +83,7 @@ class GoogleAuthUiClient(
                 GoogleIdTokenRequestOptions.builder()
                     .setSupported(true)
                     .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId("873815074424-eegmb42odblpeepkar617ah9gvieavgc.apps.googleusercontent.com")
+                    .setServerClientId(context.getString(R.string.web_client_id))
                     .build()
             )
             .setAutoSelectEnabled(true)

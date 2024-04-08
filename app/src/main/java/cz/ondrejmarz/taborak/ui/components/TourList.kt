@@ -17,6 +17,7 @@ fun TourList(
     tourList: List<Tour>?,
     userId: String?,
     onTourSelected: (String) -> Unit,
+    onTourAccessDenied: (String) -> Unit,
     modifier: Modifier = Modifier) {
     if (tourList != null) {
         LazyColumn(modifier = modifier) {
@@ -31,7 +32,10 @@ fun TourList(
                         endTime = tour.endDate,
                         enabled = isMember,
                         button = "Otevřít",
-                        onClickAction = { if (isMember == true) { onTourSelected(tour.tourId) } }
+                        onClickAction = {
+                            if (isMember == true) { onTourSelected(tour.tourId) }
+                            else { onTourAccessDenied(tour.tourId) }
+                        }
                     )
                 }
             }

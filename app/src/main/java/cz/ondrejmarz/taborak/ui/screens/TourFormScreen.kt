@@ -30,8 +30,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import cz.ondrejmarz.taborak.auth.UserData
 import cz.ondrejmarz.taborak.data.models.Tour
 import cz.ondrejmarz.taborak.data.viewmodel.factory.TourViewModelFactory
+import cz.ondrejmarz.taborak.data.viewmodel.factory.UserViewModelFactory
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,9 +41,10 @@ import java.util.Date
 @Composable
 fun TourFormScreen(
     navController: NavHostController,
-    userId: String? = null,
+    userData: UserData? = null,
 ) {
-    val tourModelView = TourViewModelFactory.getTourViewModel()
+    val tourViewModel = TourViewModelFactory.getTourViewModel()
+    val userViewModel = UserViewModelFactory.getUserViewModel()
 
     var title by remember { mutableStateOf("") }
     var topic by remember { mutableStateOf("") }
@@ -120,15 +123,15 @@ fun TourFormScreen(
 
             Button(
                 onClick = {
-                    if (title != "" && userId != null) {
-                        tourModelView.createNewTour(
+                    if (title != "" && userData != null) {
+                        tourViewModel.createNewTour(
                             Tour(
                                 title = title,
                                 description = description,
                                 topic = topic,
                                 endDate = "2024-03-28T23:12:00.242+00:00",
                                 startDate = "2024-03-28T23:10:00.242+00:00",
-                                members = listOf(userId)
+                                members = listOf(userData.userId)
                             )
                         )
                     }

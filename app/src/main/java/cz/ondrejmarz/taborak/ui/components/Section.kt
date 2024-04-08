@@ -22,10 +22,11 @@ fun Section(
     title: String,
     onButtonClick: (() -> Unit)? = null,
     buttonTitle: String? = null,
+    modifier: Modifier? = null,
     content: @Composable () -> Unit
 ) {
     Column (
-        modifier = Modifier
+        modifier = modifier?:Modifier
             .padding(20.dp)
             .fillMaxWidth()
     ) {
@@ -58,15 +59,5 @@ fun Section(
         }
 
         content()
-    }
-}
-
-@Preview
-@Composable
-fun PreviewSection() {
-    MaterialTheme {
-        Section(title = "Nadpis", onButtonClick = {}, buttonTitle = "Další") {
-            Text(text = "Obsah")
-        }
     }
 }
