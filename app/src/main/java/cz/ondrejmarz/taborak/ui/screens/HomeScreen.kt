@@ -19,7 +19,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -29,11 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.data.models.Tour
+import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
+import cz.ondrejmarz.taborak.data.viewmodel.UserViewModel
 import cz.ondrejmarz.taborak.ui.components.TourList
-import cz.ondrejmarz.taborak.data.viewmodel.factory.TourViewModelFactory
-import cz.ondrejmarz.taborak.data.viewmodel.factory.UserViewModelFactory
 import cz.ondrejmarz.taborak.ui.components.MiddleDarkButton
 import cz.ondrejmarz.taborak.ui.components.Section
 import kotlinx.coroutines.launch
@@ -47,14 +50,12 @@ fun HomeScreen(
     onLogoutClick: () -> Unit,
     onTourClick: (String, String) -> Unit,
     onCreateTourClick: () -> Unit,
+    tourViewModel: TourViewModel = viewModel(),
+    userViewModel: UserViewModel = viewModel()
 ) {
-    val tourModelView = TourViewModelFactory.getTourViewModel()
-    val userViewModel = UserViewModelFactory.getUserViewModel()
+    tourViewModel.fetchTours()
 
-    tourModelView.fetchTours()
-
-    val tourListState: State<List<Tour>?> = tourModelView.tours.observeAsState()
-    val tourList: List<Tour>? = tourListState.value
+    val tourList by tourViewModel.tours.collectAsState()
 
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -72,10 +73,12 @@ fun HomeScreen(
                 title = "Turnusy",
                 onButtonClick = onCreateTourClick,
                 buttonTitle = "Přidat",
-                modifier = Modifier.padding(20.dp).weight(5.5f)
+                modifier = Modifier
+                    .padding(20.dp)
+                    .weight(5.5f)
             ) {
                 TourList(
-                    tourList,
+                    tourList.listedTours,
                     userId,
                     onTourSelected = { id: String ->
                         if (userId != null) {
