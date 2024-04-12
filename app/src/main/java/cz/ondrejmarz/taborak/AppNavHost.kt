@@ -11,9 +11,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,12 +21,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.google.android.gms.auth.api.identity.Identity
+import cz.ondrejmarz.taborak.auth.AuthTokenManager
 import cz.ondrejmarz.taborak.auth.GoogleAuthUiClient
 import cz.ondrejmarz.taborak.auth.UserData
 import cz.ondrejmarz.taborak.auth.UserRole
+import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
+import cz.ondrejmarz.taborak.data.viewmodel.UserViewModel
 import cz.ondrejmarz.taborak.data.viewmodel.auth.SignInViewModel
-import cz.ondrejmarz.taborak.data.viewmodel.factory.TourViewModelFactory
-import cz.ondrejmarz.taborak.data.viewmodel.factory.UserViewModelFactory
 import cz.ondrejmarz.taborak.ui.screens.CalendarScreen
 import cz.ondrejmarz.taborak.ui.screens.HomeScreen
 import cz.ondrejmarz.taborak.ui.screens.ParticipantsScreen
@@ -50,6 +48,7 @@ fun AppNavHost(
         navController = navController,
         startDestination = "sign_in",
     ) {
+        AuthTokenManager.init(applicationContext)
 
         val googleAuthUiClient by lazy {
             GoogleAuthUiClient(
@@ -58,16 +57,17 @@ fun AppNavHost(
             )
         }
 
-        val tourModelView = TourViewModelFactory.getTourViewModel()
-        val userViewModel = UserViewModelFactory.getUserViewModel()
-
         composable(route = SignIn.route) {
             val viewModel = viewModel<SignInViewModel>()
+            //val tourViewModel = viewModel<TourViewModel>()
+            val userViewModel = viewModel<UserViewModel>()
             val state by viewModel.state.collectAsStateWithLifecycle()
 
             LaunchedEffect(key1 = Unit) {
                 if(googleAuthUiClient.getSignInUser() != null) {
-                    userViewModel.checkUser(googleAuthUiClient.getSignInUser())
+                    userViewModel.checkIfUserIsInDatabase(googleAuthUiClient.getSignInUser())
+                    googleAuthUiClient.setSignInUserToken()?.let {
+                        AuthTokenManager.saveAuthToken(it) }
                     navController.navigate("home")
                 }
             }
@@ -94,7 +94,9 @@ fun AppNavHost(
                         Toast.LENGTH_LONG
                     ).show()
 
-                    userViewModel.checkUser(googleAuthUiClient.getSignInUser())
+                    googleAuthUiClient.setSignInUserToken()?.let {
+                        AuthTokenManager.saveAuthToken(it) }
+                    userViewModel.checkIfUserIsInDatabase(googleAuthUiClient.getSignInUser())
                     navController.navigate("home")
                     viewModel.resetState()
                 }
@@ -117,6 +119,8 @@ fun AppNavHost(
 
         composable(route = Home.route) {
             val viewModel = viewModel<SignInViewModel>()
+            //val tourViewModel = viewModel<TourViewModel>()
+            val userViewModel = viewModel<UserViewModel>()
 
             HomeScreen(
                 navController,
@@ -135,14 +139,14 @@ fun AppNavHost(
                     navController.navigateSingleTopTo("tour_form")
                 }
             )
-
-
         }
 
         composable(route = "tour_form") {
-            //println("Tvá role v tomto turnuse je " + userViewModel.)
+            val tourViewModel = viewModel<TourViewModel>()
+            val userViewModel = viewModel<UserViewModel>()
             TourFormScreen(
                 navController,
+                tourViewModel,
                 googleAuthUiClient.getSignInUser()
             )
         }
@@ -155,7 +159,8 @@ fun AppNavHost(
             })
         ) { backStackEntry ->
             val tourId = backStackEntry.arguments?.getString("tourId")
-            tourId?.run { TourScreen(tourId = tourId, navController) }
+            val tourViewModel = viewModel<TourViewModel>()
+            tourId?.run { TourScreen(tourId = tourId, tourViewModel, navController) }
         }
 
         composable(

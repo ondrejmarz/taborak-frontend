@@ -2,17 +2,16 @@ package cz.ondrejmarz.taborak.ui.screens
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DateRangePickerState
+import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,28 +29,41 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.auth.UserData
 import cz.ondrejmarz.taborak.data.models.Tour
-import cz.ondrejmarz.taborak.data.viewmodel.factory.TourViewModelFactory
-import cz.ondrejmarz.taborak.data.viewmodel.factory.UserViewModelFactory
+import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
+import cz.ondrejmarz.taborak.data.viewmodel.UserViewModel
+import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TourFormScreen(
     navController: NavHostController,
+    tourViewModel: TourViewModel = viewModel(),
     userData: UserData? = null,
 ) {
-    val tourViewModel = TourViewModelFactory.getTourViewModel()
-    val userViewModel = UserViewModelFactory.getUserViewModel()
+    val dateTime = LocalDateTime.now()
 
+    val dateRangePickerState = remember {
+        DateRangePickerState(
+            locale = Locale.getDefault(),
+            initialSelectedStartDateMillis = dateTime.toMillis(),
+            initialDisplayedMonthMillis = null,
+            initialSelectedEndDateMillis = dateTime.plusDays(11).toMillis(),
+            initialDisplayMode = DisplayMode.Input
+        )
+    }
     var title by remember { mutableStateOf("") }
     var topic by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var startDate by remember { mutableStateOf<Date?>(null) }
-    var endDate by remember { mutableStateOf<Date?>(null) }
 
     Scaffold(
         topBar = {
@@ -98,28 +111,7 @@ fun TourFormScreen(
                     .padding(bottom = 16.dp)
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
-                    label = { Text("Od") },
-                    modifier = Modifier
-                        .weight(1f)
-                )
-
-                Spacer(modifier = Modifier.width(20.dp))
-                
-                OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
-                    label = { Text("Do") },
-                    modifier = Modifier
-                        .weight(1f)
-                )
-            }
+            DateRangePicker(state = dateRangePickerState)
 
             Button(
                 onClick = {
@@ -129,8 +121,8 @@ fun TourFormScreen(
                                 title = title,
                                 description = description,
                                 topic = topic,
-                                endDate = "2024-03-28T23:12:00.242+00:00",
-                                startDate = "2024-03-28T23:10:00.242+00:00",
+                                endDate = formatMillisToIsoDateTime(dateRangePickerState.selectedEndDateMillis?: 0),
+                                startDate = formatMillisToIsoDateTime(dateRangePickerState.selectedStartDateMillis?: 0),
                                 members = listOf(userData.userId)
                             )
                         )
@@ -145,4 +137,14 @@ fun TourFormScreen(
             }
         }
     }
+}
+
+fun formatMillisToIsoDateTime(millis: Long): String {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    dateFormat.timeZone = TimeZone.getTimeZone("Europe/Prague")
+    return dateFormat.format(Date(millis))
+}
+@RequiresApi(Build.VERSION_CODES.O)
+fun LocalDateTime.toMillis(): Long {
+    return this.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }

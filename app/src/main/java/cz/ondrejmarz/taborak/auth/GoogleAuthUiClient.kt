@@ -67,6 +67,16 @@ class GoogleAuthUiClient(
             email = email
         )
     }
+
+    suspend fun setSignInUserToken(): String? {
+        val user = auth.currentUser
+        if (user != null) {
+            println("Token set")
+            return user.getIdToken(true).await().token
+        }
+        return null
+    }
+
     suspend fun signOut() {
         try {
             oneTapClient.signOut().await()

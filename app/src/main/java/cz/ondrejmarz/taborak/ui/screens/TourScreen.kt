@@ -6,11 +6,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.appTabRowScreens
 import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputDayString
-import cz.ondrejmarz.taborak.data.viewmodel.factory.TourViewModelFactory
+import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
 import cz.ondrejmarz.taborak.ui.components.BottomNavBar
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.Section
@@ -19,10 +22,11 @@ import cz.ondrejmarz.taborak.ui.components.Section
 @Composable
 fun TourScreen(
     tourId: String,
+    tourViewModel: TourViewModel = viewModel(),
     navController: NavHostController
 ) {
-    val tourModelView = TourViewModelFactory.getTourViewModel()
-    val currentTour = tourModelView.tours.value?.find { it.tourId == tourId }
+    val tours by tourViewModel.tours.collectAsState()
+    val currentTour = tours.listedTours.find { it.tourId == tourId }
 
     Scaffold(
         bottomBar = {

@@ -36,13 +36,7 @@ fun DesignedCard(
             .wrapContentWidth(Alignment.CenterHorizontally)
             .padding(vertical = 10.dp)
             .clickable { onClickAction?.invoke() },
-        shape = MaterialTheme.shapes.small,
-        colors = CardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            disabledContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-            disabledContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-        )
+        shape = MaterialTheme.shapes.small
 
     ) {
         Column(
