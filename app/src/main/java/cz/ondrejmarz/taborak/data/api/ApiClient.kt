@@ -2,25 +2,13 @@ package cz.ondrejmarz.taborak.data.api
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import cz.ondrejmarz.taborak.auth.AuthTokenManager
 import cz.ondrejmarz.taborak.auth.UserData
-import cz.ondrejmarz.taborak.auth.UserRole
+import cz.ondrejmarz.taborak.data.models.DayPlan
 import cz.ondrejmarz.taborak.data.models.Tour
-import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import java.io.IOException
 
 object ApiClient {
@@ -112,6 +100,27 @@ object ApiClient {
         runBlocking {
             val url = "$urlPath/tours/$tourId/members/$userId/role"
             RequestManagerOkHttp.makePutRequest(url, role, onSuccess, { error -> println(error) })
+        }
+    }
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *
+     *   CALENDAR
+     *
+     */
+
+    fun fetchCalendarData(tourId: String, day: String, onSuccess: (String) -> Unit, onFailure: (IOException) -> Unit) {
+        runBlocking {
+            val url = "$urlPath/tours/$tourId/calendar/$day"
+            RequestManagerOkHttp.makeGetRequest(url, onSuccess, onFailure)
+        }
+    }
+
+    fun createActivities(tourId: String, day: String, dayPlan: DayPlan, onSuccess: (String) -> Unit, onFailure: (IOException) -> Unit) {
+        runBlocking {
+            val url = "$urlPath/tours/$tourId/calendar/$day"
+            val jsonBody = Json.encodeToString(dayPlan)
+            RequestManagerOkHttp.makePostRequest(url, jsonBody, onSuccess, onFailure)
         }
     }
 }

@@ -1,4 +1,4 @@
-package cz.ondrejmarz.taborak.ui.screens
+package cz.ondrejmarz.taborak.ui.screens.menu
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -6,13 +6,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import cz.ondrejmarz.taborak.appTabRowScreens
 import cz.ondrejmarz.taborak.ui.components.BottomNavBar
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.Section
 
 @Composable
-fun CalendarScreen(
+fun TasksScreen(
     tourId: String,
     navController: NavHostController
 ) {
@@ -24,10 +26,9 @@ fun CalendarScreen(
                 tourId = tourId,
                 allScreens = appTabRowScreens,
                 onItemSelected = { route ->
-                    navController.popBackStack()
                     navController.navigate(route)
                 },
-                currentScreen = "Kalendář"
+                currentScreen = "Úkoly"
             )
         }
     ) { innerPadding ->
@@ -35,24 +36,17 @@ fun CalendarScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
 
-            Section(title = "Denní plán") {
+            Section(title = "Přiřazené úkoly") {
                 DesignedCard(
-                    title = "Turnus momentálně nemá vytvořený denní plán",
-                    description = "Denní plán může vytvořit hlavní vedoucí, nebo zástupci."
+                    title = "Momentálně nemáš žádné přiřazené úkoly",
+                    description = "Můžeš požádat hlavní vedoucí, nebo jeho zástupce, aby ti úkoly přidělili."
                 )
             }
 
-            Section(title = "Jídelníček") {
+            Section(title = "Vlastní úkoly") {
                 DesignedCard(
-                    title = "Turnus momentálně nemá vytvořený jídelníček",
-                    description = "Jídelníček může vytvořit hlavní vedoucí, nebo zástupci."
-                )
-            }
-
-            Section(title = "Služba") {
-                DesignedCard(
-                    title = "Turnus momentálně nemá přiřazenou službu",
-                    description = "Službu může přiřadit hlavní vedoucí, nebo zástupci."
+                    title = "Momentálně nemáš žádné vlastní úkoly",
+                    description = "Můžeš si vytvořit vlastní úkoly pomocí tlačítka VYTVOŘIT."
                 )
             }
         }

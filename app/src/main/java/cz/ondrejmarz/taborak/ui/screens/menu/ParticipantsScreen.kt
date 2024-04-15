@@ -1,4 +1,4 @@
-package cz.ondrejmarz.taborak.ui.screens
+package cz.ondrejmarz.taborak.ui.screens.menu
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -27,7 +27,6 @@ fun ParticipantsScreen(
                 tourId = tourId,
                 allScreens = appTabRowScreens,
                 onItemSelected = { route ->
-                    navController.popBackStack()
                     navController.navigate(route)
                 },
                 currentScreen = "Oddíl"

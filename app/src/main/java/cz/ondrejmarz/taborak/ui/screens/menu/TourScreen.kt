@@ -1,4 +1,4 @@
-package cz.ondrejmarz.taborak.ui.screens
+package cz.ondrejmarz.taborak.ui.screens.menu
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -34,7 +34,6 @@ fun TourScreen(
                 tourId = tourId,
                 allScreens = appTabRowScreens,
                 onItemSelected = { route ->
-                    navController.popBackStack()
                     navController.navigate(route)
                 },
                 currentScreen = "Turnus"

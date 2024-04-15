@@ -7,16 +7,18 @@ import kotlinx.serialization.json.Json
 import androidx.lifecycle.ViewModel
 import cz.ondrejmarz.taborak.data.api.ApiClient
 import cz.ondrejmarz.taborak.data.models.Tour
+import cz.ondrejmarz.taborak.data.util.getCurrentDate
+import cz.ondrejmarz.taborak.data.viewmodel.states.TourListState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.SerializationException
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-data class TourListState(
-    val listedTours: List<Tour> = emptyList()
-)
 
 class TourViewModel : ViewModel() {
 

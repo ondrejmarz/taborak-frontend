@@ -1,4 +1,4 @@
-package cz.ondrejmarz.taborak.ui.screens
+package cz.ondrejmarz.taborak.ui.screens.menu
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -53,7 +53,6 @@ fun SettingsScreen(
                 tourId = tourId,
                 allScreens = appTabRowScreens,
                 onItemSelected = { route ->
-                    navController.popBackStack()
                     navController.navigate(route)
                 },
                 currentScreen = "Nastavení"
@@ -113,7 +112,7 @@ fun SettingsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     MiddleDarkButton(
-                        onClickButton = { navController.popBackStack() }
+                        onClickButton = { navController.popBackStack("home", inclusive = false, true) }
                     ) {
                         Text(text = "Změnit turnus")
                     }
@@ -121,7 +120,7 @@ fun SettingsScreen(
                         onClickButton = {
                             // TODO: vyhodit upozornění
                             tourViewModel.deleteTour(tourId)
-                            navController.popBackStack()
+                            navController.popBackStack("home", inclusive = true, true)
                         }
                     ) {
                         Text(text = "Smazat turnus")

@@ -1,4 +1,4 @@
-package cz.ondrejmarz.taborak.ui.screens
+package cz.ondrejmarz.taborak.ui.screens.forms
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -21,7 +21,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,8 +32,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.auth.UserData
 import cz.ondrejmarz.taborak.data.models.Tour
+import cz.ondrejmarz.taborak.data.util.formatMillisToIsoDateTime
+import cz.ondrejmarz.taborak.data.util.toMillis
 import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
-import cz.ondrejmarz.taborak.data.viewmodel.UserViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -77,10 +77,10 @@ fun TourFormScreen(
             )
         },
         modifier = Modifier.fillMaxSize()
-    ) { innerPaddding ->
+    ) { innerPadding ->
         Column(
             modifier = Modifier
-                .padding(innerPaddding)
+                .padding(innerPadding)
                 .fillMaxWidth()
                 .padding(20.dp)
         ) {
@@ -139,12 +139,3 @@ fun TourFormScreen(
     }
 }
 
-fun formatMillisToIsoDateTime(millis: Long): String {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-    dateFormat.timeZone = TimeZone.getTimeZone("Europe/Prague")
-    return dateFormat.format(Date(millis))
-}
-@RequiresApi(Build.VERSION_CODES.O)
-fun LocalDateTime.toMillis(): Long {
-    return this.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-}

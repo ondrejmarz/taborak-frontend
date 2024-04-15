@@ -19,16 +19,17 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun Section(
+    modifier: Modifier? = null,
     title: String,
     onButtonClick: (() -> Unit)? = null,
     buttonTitle: String? = null,
-    modifier: Modifier? = null,
     content: @Composable () -> Unit
 ) {
     Column (
         modifier = modifier?:Modifier
             .padding(20.dp)
-            .fillMaxWidth()
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
             modifier = Modifier
@@ -49,7 +50,7 @@ fun Section(
 
                 Button(
                     modifier = Modifier
-                        .weight(2f),
+                        .weight(3f),
                     shape = MaterialTheme.shapes.small,
                     onClick = { onButtonClick() }
                 ) {

@@ -2,7 +2,9 @@ package cz.ondrejmarz.taborak.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputDayString
+import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputTimeString
 
 @Composable
 fun DesignedCard(
@@ -26,50 +29,67 @@ fun DesignedCard(
     description: String? = null,
     startTime: String? = null,
     endTime: String? = null,
+    timeInDayFormat: Boolean? = true,
     enabled: Boolean? = null,
     button: String? = null,
     onClickAction: (() -> Unit)? = null,
 ) {
     Card(
+        onClick = { onClickAction?.invoke() },
+        enabled = enabled == true || onClickAction == null,
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentWidth(Alignment.CenterHorizontally)
             .padding(vertical = 10.dp)
-            .clickable { onClickAction?.invoke() },
+            .wrapContentWidth(Alignment.CenterHorizontally),
+        colors = CardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
         shape = MaterialTheme.shapes.small
 
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (enabled == true) MaterialTheme.colorScheme.surfaceContainer else Color.LightGray)
                 .padding(20.dp)
         ) {
-            Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            val tourTime = TimeText(startTime, endTime)
-
-            if ( tourTime != null ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    text = tourTime,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier
-                        .align(Alignment.End)
+                    text = title,
+                    //color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(9f)
                 )
+
+                var tourTime: String? = null
+                if (timeInDayFormat == true)
+                    tourTime = dayText(startTime, endTime)
+                if (timeInDayFormat == false)
+                    tourTime = timeText(startTime, endTime)
+
+                if ( tourTime != null ) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = tourTime,
+                        //color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier
+                            .weight(2f)
+                    )
+                }
             }
-            else if (topic != null || description != null)
-                Spacer(modifier = Modifier.height(10.dp))
 
             if (topic != null) {
 
                 Text(
                     text = topic,
-                    color = Color.Black,
+                    //color = Color.Black,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -78,7 +98,7 @@ fun DesignedCard(
 
                 Text(
                     text = description,
-                    color = Color.Black,
+                    //color = Color.Black,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -86,9 +106,10 @@ fun DesignedCard(
             if (enabled == true) {
 
                 Text(
-                    color = MaterialTheme.colorScheme.secondary,
+                    //color = MaterialTheme.colorScheme.secondary,
                     text = if (button == null) "Otevřít" else button,
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .align(Alignment.End)
                 )
@@ -97,15 +118,28 @@ fun DesignedCard(
     }
 }
 
-private fun TimeText(startDate: String?, endDate: String?): String? {
+private fun dayText(startDate: String?, endDate: String?): String? {
 
     val startTime = formatDateStringToOutputDayString(startDate)
     val endTime = formatDateStringToOutputDayString(endDate)
 
     var timeString: String? = null
-    if (startTime != null && endTime != null) timeString = startTime + "––" + endTime
-    if (startTime != null && endTime == null) timeString = "od " + startTime
-    if (startTime == null && endTime != null) timeString = "do " + endTime
+    if (startTime != null && endTime != null) timeString = "od $startTime do $endTime"
+    if (startTime != null && endTime == null) timeString = "od $startTime"
+    if (startTime == null && endTime != null) timeString = "do $endTime"
+
+    return timeString
+}
+
+private fun timeText(startDate: String?, endDate: String?): String? {
+
+    val startTime = formatDateStringToOutputTimeString(startDate)
+    val endTime = formatDateStringToOutputTimeString(endDate)
+
+    var timeString: String? = null
+    if (startTime != null && endTime != null) timeString = "od $startTime do $endTime"
+    if (startTime != null && endTime == null) timeString = "od $startTime"
+    if (startTime == null && endTime != null) timeString = "do $endTime"
 
     return timeString
 }

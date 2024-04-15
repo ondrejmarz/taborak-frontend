@@ -30,6 +30,7 @@ fun TourList(
                         description = tour.description,
                         startTime = tour.startDate,
                         endTime = tour.endDate,
+                        timeInDayFormat = true,
                         enabled = isMember,
                         button = "Otevřít",
                         onClickAction = {
