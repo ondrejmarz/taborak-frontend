@@ -2,14 +2,25 @@ package cz.ondrejmarz.taborak.ui.screens.menu
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerColors
 import androidx.compose.material3.DatePickerDefaults
@@ -29,11 +40,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.google.android.material.datepicker.CalendarConstraints
+import cz.ondrejmarz.taborak.R
 import cz.ondrejmarz.taborak.appTabRowScreens
 import cz.ondrejmarz.taborak.data.models.Activity
 import cz.ondrejmarz.taborak.data.models.Tour
@@ -99,6 +114,7 @@ fun CalendarScreen(
     //val activityNext = findNextActivity(calendar.dayProgram?.getActivityList)
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         bottomBar = {
             BottomNavBar(
                 tourId = tourId,
@@ -108,18 +124,23 @@ fun CalendarScreen(
                 },
                 currentScreen = "Kalendář"
             )
-        },
-        modifier = Modifier.fillMaxSize()
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
         ) {
-            Section(
-                title = "Den ${selectedDay.fromDayToReadableDay()}",
-                onButtonClick = { showSelectDayDialog = true },
-                buttonTitle = "Vybrat den"
-            ) { }
+            Button(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxWidth(),
+                shape = MaterialTheme.shapes.small,
+                onClick = { showSelectDayDialog = true }
+            ) {
+                Text(text = "Vybraný den: " + selectedDay.fromDayToReadableDay())
+            }
+
             if (calendar.dayProgram?.dayId != null) {
                 if (selectedDay == getCurrentDate() && activityCurrent != null) {
                     Section(
@@ -141,11 +162,38 @@ fun CalendarScreen(
                     Section(
                         title = "Denní plán",
                         onButtonClick = { navController.navigate("daily_plan/$tourId/$selectedDay") },
-                        buttonTitle = "Zobrazit"
+                        buttonTitle = "Zobrazit vše"
                     ) {
-                        DesignedCard(
-                            title = "Tento den má vytvořený plán"
-                        )
+                        Column {
+                            DesignedCard(
+                                title = calendar.dayProgram?.programMorning?.name?: "Nepojmenovaná aktivita",
+                                topic = calendar.dayProgram?.programMorning?.type,
+                                startTime = calendar.dayProgram?.programMorning?.startTime,
+                                endTime = calendar.dayProgram?.programMorning?.endTime,
+                                timeInDayFormat = false
+                            )
+                            DesignedCard(
+                                title = calendar.dayProgram?.programAfternoon?.name?: "Nepojmenovaná aktivita",
+                                topic = calendar.dayProgram?.programAfternoon?.type,
+                                startTime = calendar.dayProgram?.programAfternoon?.startTime,
+                                endTime = calendar.dayProgram?.programAfternoon?.endTime,
+                                timeInDayFormat = false
+                            )
+                            DesignedCard(
+                                title = calendar.dayProgram?.programEvening?.name?: "Nepojmenovaná aktivita",
+                                topic = calendar.dayProgram?.programEvening?.type,
+                                startTime = calendar.dayProgram?.programEvening?.startTime,
+                                endTime = calendar.dayProgram?.programEvening?.endTime,
+                                timeInDayFormat = false
+                            )
+                            DesignedCard(
+                                title = calendar.dayProgram?.programNight?.name?: "Nepojmenovaná aktivita",
+                                topic = calendar.dayProgram?.programNight?.type,
+                                startTime = calendar.dayProgram?.programNight?.startTime,
+                                endTime = calendar.dayProgram?.programNight?.endTime,
+                                timeInDayFormat = false
+                            )
+                        }
                     }
                 }
 
@@ -160,31 +208,32 @@ fun CalendarScreen(
                         title = "Denní plán není vytvořený",
                         description = "Můžete požádat hlavní vedoucího o vytvoření denního plánu"
                     )
+                    Image(
+                        painter = painterResource(id = R.drawable.search_rafiki),
+                        contentDescription = null
+                    )
                 }
             }
 
             val menuList = getMenuItems(activityList = calendar.dayProgram?.getActivityList)
             if (menuList != null) {
                 Section(title = "Jídelníček") {
-                    LazyColumn(modifier = Modifier
-                        .fillMaxWidth()
-                    ) {
-                        items(menuList) { menuItem ->
-                            DesignedCard(
-                                title = menuItem.desc ?: "Neznámo",
-                                description = menuItem.name
-                            )
-                        }
+                    menuList.forEach { activity ->
+                        DesignedCard(
+                            title = activity.desc ?: "Neznámo",
+                            description = activity.name
+                        )
                     }
                 }
             }
 
+            /*
             Section(title = "Služba") {
                 DesignedCard(
                     title = "Turnus momentálně nemá přiřazenou službu",
                     description = "Službu může přiřadit hlavní vedoucí, nebo zástupci."
                 )
-            }
+            }*/
 
             if (showSelectDayDialog) {
                 DatePickerDialog(
@@ -198,7 +247,10 @@ fun CalendarScreen(
                         //showSelectDayDialog = false
                     }
                 ) {
-                    DatePicker(state = datePickerState)
+                    DatePicker(
+                        state = datePickerState,
+                        title = {Text("Zvolte datum")}
+                        )
                 }
             }
         }

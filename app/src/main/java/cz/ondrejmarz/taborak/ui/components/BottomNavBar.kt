@@ -1,7 +1,9 @@
 package cz.ondrejmarz.taborak.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +14,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,7 +44,9 @@ fun BottomNavBar(
         Modifier.fillMaxWidth()
     ) {
         Row(
-            Modifier.selectableGroup(),
+            Modifier
+                .selectableGroup()
+                .padding(vertical = 3.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -51,7 +57,7 @@ fun BottomNavBar(
                     onSelected = {
                         onItemSelected( screen.route + "/" + tourId )
                     },
-                    selected = currentScreen == screen.route
+                    selected = currentScreen == screen.name
                 )
             }
         }
@@ -65,6 +71,17 @@ private fun AppTab(
     onSelected: () -> Unit,
     selected: Boolean
 ) {
+    Box(modifier = Modifier
+        .selectable(selected, true, onClick = onSelected)
+        .padding(20.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+    /*
     Row(
         modifier = Modifier
             .padding(16.dp)
@@ -72,20 +89,19 @@ private fun AppTab(
                 selected = selected,
                 onClick = onSelected,
                 role = Role.Tab,
-                interactionSource = remember { MutableInteractionSource() },
-                indication = rememberRipple(
-                    bounded = false,
-                    radius = Dp.Unspecified,
-                    color = Color.Unspecified
-                )
             )
-            .clearAndSetSemantics { contentDescription = text }
     ) {
         Column {
-            Icon(imageVector = icon, contentDescription = text)
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+            /*
             if (selected) {
                 Text(text.uppercase(Locale.getDefault()))
             }
+            */
         }
     }
+    */
 }

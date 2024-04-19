@@ -123,7 +123,10 @@ fun TourFormScreen(
                                 topic = topic,
                                 endDate = formatMillisToIsoDateTime(dateRangePickerState.selectedEndDateMillis?: 0),
                                 startDate = formatMillisToIsoDateTime(dateRangePickerState.selectedStartDateMillis?: 0),
-                                members = listOf(userData.userId)
+                                members = listOf(userData.userId),
+                                applications = null,
+                                groups = null,
+                                dailyPrograms = null
                             )
                         )
                     }

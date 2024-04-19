@@ -3,9 +3,14 @@ package cz.ondrejmarz.taborak.data.api
 import cz.ondrejmarz.taborak.auth.AuthTokenManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonNull.content
+import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
@@ -71,6 +76,35 @@ object RequestManagerOkHttp {
             }
         }
     }
+
+    suspend fun makePostRequest(url: String, byteArray: ByteArray, onSuccess: (String) -> Unit, onFailure: (IOException) -> Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+
+                val requestBody = byteArray.toRequestBody(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet".toMediaTypeOrNull(),
+                    0,
+                    byteArray.size
+                )
+
+                val request = Request.Builder()
+                    .url(url)
+                    .header("Authorization", "${AuthTokenManager.getAuthToken()}")
+                    .post(requestBody)
+                    .build()
+
+                val response = client.newCall(request).execute()
+                if (!response.isSuccessful) throw IOException("Unexpected code $response")
+
+                val responseBody: String = response.body?.string() ?: ""
+                onSuccess(responseBody)
+
+            } catch (e: IOException) {
+                onFailure(e)
+            }
+        }
+    }
+
 
     /**
      * Function for sending a PUT request.

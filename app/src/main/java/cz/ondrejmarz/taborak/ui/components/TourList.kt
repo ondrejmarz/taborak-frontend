@@ -18,28 +18,25 @@ fun TourList(
     userId: String?,
     onTourSelected: (String) -> Unit,
     onTourAccessDenied: (String) -> Unit,
-    modifier: Modifier = Modifier) {
-    if (tourList != null) {
-        LazyColumn(modifier = modifier) {
-            itemsIndexed(tourList) { index, tour ->
-                val isMember = tour.members?.contains(userId)
-                if (tour.tourId != null) {
-                    DesignedCard(
-                        title = if (tour.title != null) tour.title else "Nepojmenovaný turnus",
-                        topic = tour.topic,
-                        description = tour.description,
-                        startTime = tour.startDate,
-                        endTime = tour.endDate,
-                        timeInDayFormat = true,
-                        enabled = isMember,
-                        button = "Otevřít",
-                        onClickAction = {
-                            if (isMember == true) { onTourSelected(tour.tourId) }
-                            else { onTourAccessDenied(tour.tourId) }
-                        }
-                    )
+    modifier: Modifier = Modifier
+) {
+    tourList?.forEach { tour ->
+        val isMember = tour.members?.contains(userId)
+        if (tour.tourId != null) {
+            DesignedCard(
+                title = if (tour.title != null) tour.title else "Nepojmenovaný turnus",
+                topic = tour.topic,
+                description = tour.description,
+                startTime = tour.startDate,
+                endTime = tour.endDate,
+                timeInDayFormat = true,
+                enabled = isMember,
+                button = "Otevřít",
+                onClickAction = {
+                    if (isMember == true) { onTourSelected(tour.tourId) }
+                    else { onTourAccessDenied(tour.tourId) }
                 }
-            }
+            )
         }
     }
 }

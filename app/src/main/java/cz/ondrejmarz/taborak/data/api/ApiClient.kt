@@ -123,4 +123,34 @@ object ApiClient {
             RequestManagerOkHttp.makePostRequest(url, jsonBody, onSuccess, onFailure)
         }
     }
+
+    fun updateDayPlan(tourId: String, day: String, dayPlan: DayPlan?, onSuccess: () -> Unit, onFailure: (IOException) -> Unit) {
+        runBlocking {
+            val url = "$urlPath/tours/$tourId/calendar/$day"
+            val jsonBody = Json.encodeToString(dayPlan)
+            RequestManagerOkHttp.makePutRequest(url, jsonBody, onSuccess, onFailure)
+        }
+    }
+
+
+
+    /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+     *
+     *   PARTICIPANTS
+     *
+     */
+
+    fun fetchParticipants(tourId: String, onSuccess: (String) -> Unit, onFailure: (IOException) -> Unit) {
+        runBlocking {
+            val url = "$urlPath/tours/$tourId/groups"
+            RequestManagerOkHttp.makeGetRequest(url, onSuccess, onFailure)
+        }
+    }
+
+    fun uploadParticipantXlsx(tourId: String, byteArray: ByteArray, onSuccess: (String) -> Unit, onFailure: (IOException) -> Unit) {
+        runBlocking {
+            val url = "$urlPath/tours/$tourId/groups/createAllInXlsx"
+            RequestManagerOkHttp.makePostRequest(url, byteArray, onSuccess, onFailure)
+        }
+    }
 }

@@ -25,7 +25,6 @@ import cz.ondrejmarz.taborak.auth.GoogleAuthUiClient
 import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
 import cz.ondrejmarz.taborak.data.viewmodel.UserViewModel
 import cz.ondrejmarz.taborak.data.viewmodel.auth.SignInViewModel
-import cz.ondrejmarz.taborak.ui.screens.details.ActivityDayScreen
 import cz.ondrejmarz.taborak.ui.screens.menu.CalendarScreen
 import cz.ondrejmarz.taborak.ui.screens.HomeScreen
 import cz.ondrejmarz.taborak.ui.screens.menu.ParticipantsScreen
@@ -34,6 +33,7 @@ import cz.ondrejmarz.taborak.ui.screens.menu.TasksScreen
 import cz.ondrejmarz.taborak.ui.screens.forms.TourFormScreen
 import cz.ondrejmarz.taborak.ui.screens.menu.TourScreen
 import cz.ondrejmarz.taborak.ui.screens.auth.SignInScreen
+import cz.ondrejmarz.taborak.ui.screens.details.DayPlanScreen
 import cz.ondrejmarz.taborak.ui.screens.forms.DayPlanFormScreen
 import kotlinx.coroutines.launch
 
@@ -41,35 +41,22 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavHost(
     navController: NavHostController,
-    applicationContext: Context
+    applicationContext: Context,
+    googleAuthUiClient: GoogleAuthUiClient,
+    startDestination: String
 ) {
     NavHost(
         navController = navController,
-        startDestination = "sign_in",
+        startDestination = startDestination
     ) {
         AuthTokenManager.init(applicationContext)
 
-        val googleAuthUiClient by lazy {
-            GoogleAuthUiClient(
-                context = applicationContext,
-                oneTapClient = Identity.getSignInClient(applicationContext)
-            )
-        }
-
         composable(route = SignIn.route) {
-            val viewModel = viewModel<SignInViewModel>()
-            //val tourViewModel = viewModel<TourViewModel>()
-            val userViewModel = viewModel<UserViewModel>()
-            val state by viewModel.state.collectAsStateWithLifecycle()
 
-            LaunchedEffect(key1 = Unit) {
-                if(googleAuthUiClient.getSignInUser() != null) {
-                    userViewModel.checkIfUserIsInDatabase(googleAuthUiClient.getSignInUser())
-                    googleAuthUiClient.setSignInUserToken()?.let {
-                        AuthTokenManager.saveAuthToken(it) }
-                    navController.navigate("home")
-                }
-            }
+            val viewModel = viewModel<SignInViewModel>()
+            val userViewModel = viewModel<UserViewModel>()
+
+            val state by viewModel.state.collectAsStateWithLifecycle()
 
             val launcher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartIntentSenderForResult(),
@@ -120,17 +107,28 @@ fun AppNavHost(
             val viewModel = viewModel<SignInViewModel>()
             val userViewModel = viewModel<UserViewModel>()
 
+            LaunchedEffect(key1 = Unit) {
+                if(googleAuthUiClient.getSignInUser() != null) {
+                    userViewModel.checkIfUserIsInDatabase(googleAuthUiClient.getSignInUser())
+                    googleAuthUiClient.setSignInUserToken()?.let {
+                        AuthTokenManager.saveAuthToken(it) }
+                }
+                else {
+                    navController.navigate("sign_in")
+                }
+            }
+
             HomeScreen(
                 navController,
                 googleAuthUiClient.getSignInUser()?.userId,
                 onLogoutClick = {
                     viewModel.viewModelScope.launch {
                         googleAuthUiClient.signOut()
-                        navController.popBackStack()
+                        navController.navigate("sign_in")
                     }
                 },
                 onTourClick = { tourId: String, userId: String ->
-                    navController.navigate("tour/" + tourId )
+                    navController.navigate(Calendar.route + "/" + tourId )
                     userViewModel.loadTourUserRole(tourId, userId)
                 },
                 onCreateTourClick = {
@@ -140,21 +138,19 @@ fun AppNavHost(
         }
 
         composable(route = "tour_form") {
-            val tourViewModel = viewModel<TourViewModel>()
+            //val tourViewModel = viewModel<TourViewModel>()
             val userViewModel = viewModel<UserViewModel>()
             TourFormScreen(
                 navController,
-                tourViewModel,
-                googleAuthUiClient.getSignInUser()
+                //tourViewModel,
+                userData = googleAuthUiClient.getSignInUser()
             )
         }
 
 
         composable(
             route = Tour.route + "/{tourId}",
-            arguments = listOf(navArgument("tourId") {
-                type = NavType.StringType
-            })
+            arguments = listOf(navArgument("tourId") { type = NavType.StringType })
         ) { backStackEntry ->
             val tourId = backStackEntry.arguments?.getString("tourId")
             val tourViewModel = viewModel<TourViewModel>()
@@ -168,7 +164,7 @@ fun AppNavHost(
             })
         ) { backStackEntry ->
             val tourId = backStackEntry.arguments?.getString("tourId")
-            tourId?.run { ParticipantsScreen(tourId = tourId, navController) }
+            tourId?.run { ParticipantsScreen(tourId = tourId, navController = navController) }
         }
 
         composable(
@@ -188,7 +184,7 @@ fun AppNavHost(
         ) { backStackEntry ->
             val tourId = backStackEntry.arguments?.getString("tourId")
             val day = backStackEntry.arguments?.getString("day")
-            tourId?.run { ActivityDayScreen(tourId = tourId, day, navController = navController) }
+            tourId?.run { DayPlanScreen(tourId = tourId, day, navController = navController) }
         }
 
         composable(
@@ -204,18 +200,14 @@ fun AppNavHost(
 
         composable(
             route = Tasks.route + "/{tourId}",
-            arguments = listOf(navArgument("tourId") {
-                type = NavType.StringType
-            })
+            arguments = listOf(navArgument("tourId") { type = NavType.StringType })
         ) { backStackEntry ->
             val tourId = backStackEntry.arguments?.getString("tourId")
             tourId?.run { TasksScreen(tourId = tourId, navController = navController) }
         }
         composable(
             route = Settings.route + "/{tourId}",
-            arguments = listOf(navArgument("tourId") {
-                type = NavType.StringType
-            })
+            arguments = listOf(navArgument("tourId") { type = NavType.StringType })
         ) { backStackEntry ->
             val tourId = backStackEntry.arguments?.getString("tourId")
             tourId?.run { SettingsScreen(tourId = tourId, navController = navController) }

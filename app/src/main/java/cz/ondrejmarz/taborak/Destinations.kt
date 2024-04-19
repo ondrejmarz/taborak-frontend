@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -14,6 +15,12 @@ interface AppDestination {
     val icon: ImageVector
     val name: String
     val route: String
+}
+
+object Loading : AppDestination {
+    override val icon = Icons.Default.HourglassTop
+    override val name = "Načítání"
+    override val route = "loading"
 }
 
 object SignIn : AppDestination {

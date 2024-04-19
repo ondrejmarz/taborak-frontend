@@ -85,29 +85,26 @@ fun DesignedCard(
                 }
             }
 
-            if (topic != null) {
+            if (endTime == null) {
+                Spacer(modifier = Modifier.height(5.dp))
+            }
 
-                Text(
-                    text = topic,
-                    //color = Color.Black,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            if (topic != null) {
+                Text(text = topic, style = MaterialTheme.typography.bodyMedium)
             }
 
             if (description != null) {
+                if (topic != null)
+                    Spacer(modifier = Modifier.height(5.dp))
 
-                Text(
-                    text = description,
-                    //color = Color.Black,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(text = description, style = MaterialTheme.typography.bodyMedium)
             }
 
-            if (enabled == true) {
+            if (enabled == true && button != null) {
 
                 Text(
                     //color = MaterialTheme.colorScheme.secondary,
-                    text = if (button == null) "Otevřít" else button,
+                    text = button,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier

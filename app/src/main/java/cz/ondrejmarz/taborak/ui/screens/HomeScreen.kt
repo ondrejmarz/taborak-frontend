@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -146,7 +148,8 @@ fun HomeScreen(
                                             showBottomSheetAccessDenied = false
                                         }
                                     }
-                                }) {
+                                }
+                            ) {
                                 Text(text = "Poslat žádost")
                             }
                             Spacer(modifier = Modifier.width(10.dp))

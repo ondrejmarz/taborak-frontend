@@ -49,6 +49,44 @@ class CalendarViewModel : ViewModel() {
         )
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun saveActivity(tourId: String, day: String, activity: Activity) {
+
+        var dayPlan: DayPlan? = _calendar.value.dayProgram ?: return
+
+        if (activity.type == "Jídlo" || activity.type == "Milník") {
+            when (activity.name) {
+                "Budíček" -> dayPlan?.wakeUp = activity
+                "Rozcvička" -> dayPlan?.warmUp = activity
+                "Snídaně" -> dayPlan?.dishBreakfast = activity
+                "Dopolední svačina" -> dayPlan?.dishMorningSnack = activity
+                "Oběd" -> dayPlan?.dishLunch = activity
+                "Odpolední svačina" -> dayPlan?.dishAfternoonSnack = activity
+                "Nástup" -> dayPlan?.summon = activity
+                "Večeře" -> dayPlan?.dishDinner = activity
+                "Druhá večeře" -> dayPlan?.dishEveningSnack = activity
+                "Příprava na večerku" -> dayPlan?.prepForNight = activity
+                "Večerka" -> dayPlan?.lightsOut = activity
+            }
+        }
+        else {
+            when (activity.type) {
+                "Dopolední činnost" -> dayPlan?.programMorning = activity
+                "Odpolední činnost" -> dayPlan?.programAfternoon = activity
+                "Podvečerní činnost" -> dayPlan?.programEvening = activity
+                "Večerní činnost" -> dayPlan?.programNight = activity
+            }
+        }
+
+        ApiClient.updateDayPlan(
+            tourId,
+            day,
+            dayPlan,
+            onSuccess = { fetchCalendar(tourId, day) },
+            onFailure = { e: IOException -> println(e.message) }
+        )
+    }
+
     private fun createDayPlan(responseBody: String): DayPlan {
         return try {
             Json.decodeFromString(responseBody)
