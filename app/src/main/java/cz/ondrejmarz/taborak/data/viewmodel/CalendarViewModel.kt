@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import cz.ondrejmarz.taborak.data.api.ApiClient
 import cz.ondrejmarz.taborak.data.models.Activity
 import cz.ondrejmarz.taborak.data.models.DayPlan
+import cz.ondrejmarz.taborak.data.models.Tour
 import cz.ondrejmarz.taborak.data.viewmodel.states.CalendarState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +19,20 @@ import java.io.IOException
 
 class CalendarViewModel : ViewModel() {
 
+    private val _tour = MutableStateFlow(Tour())
+    val tour: StateFlow<Tour> = _tour.asStateFlow()
+
     private val _calendar = MutableStateFlow(CalendarState())
     val calendar: StateFlow<CalendarState> = _calendar.asStateFlow()
+
+    fun fetchTour(tourId: String) {
+        ApiClient.fetchTour(tourId) { responseBody: String ->
+            val newTour = createTour(responseBody)
+            _tour.update {
+                newTour
+            }
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun fetchCalendar(tourId: String, day: String) {
@@ -73,7 +86,7 @@ class CalendarViewModel : ViewModel() {
             when (activity.type) {
                 "Dopolední činnost" -> dayPlan?.programMorning = activity
                 "Odpolední činnost" -> dayPlan?.programAfternoon = activity
-                "Podvečerní činnost" -> dayPlan?.programEvening = activity
+                "Podvečení činnost" -> dayPlan?.programEvening = activity
                 "Večerní činnost" -> dayPlan?.programNight = activity
             }
         }
@@ -85,6 +98,15 @@ class CalendarViewModel : ViewModel() {
             onSuccess = { fetchCalendar(tourId, day) },
             onFailure = { e: IOException -> println(e.message) }
         )
+    }
+
+    private fun createTour(responseBody: String): Tour {
+        return try {
+            Json.decodeFromString(responseBody)
+        } catch (e: SerializationException) {
+            e.printStackTrace()
+            Tour()
+        }
     }
 
     private fun createDayPlan(responseBody: String): DayPlan {

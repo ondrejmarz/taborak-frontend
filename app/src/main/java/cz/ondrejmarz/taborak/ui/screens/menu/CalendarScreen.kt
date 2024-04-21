@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +35,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,39 +78,46 @@ import java.util.TimeZone
 @Composable
 fun CalendarScreen(
     tourId: String,
-    tourViewModel: TourViewModel = viewModel(),
     calendarViewModel: CalendarViewModel = viewModel(),
     navController: NavHostController
 ) {
-    tourViewModel.fetchTours()
-    val tours by tourViewModel.tours.collectAsState()
-    val currentTour = tours.listedTours.find { it.tourId == tourId }
+    LaunchedEffect(key1 = true) { calendarViewModel.fetchTour(tourId) }
+    val tour by calendarViewModel.tour.collectAsState()
 
     var showSelectDayDialog by remember { mutableStateOf(false) }
 
-    var selectedDay by rememberSaveable { mutableStateOf(getClosestTourDate(currentTour)) }
+    var selectedDay by rememberSaveable { mutableStateOf(getCurrentDate()) }
 
-    val datePickerState = remember {
-        var startDate = currentTour?.startDate?.let { LocalDateTime.parse(currentTour.startDate, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")) }
-        var endDate = currentTour?.endDate?.let { LocalDateTime.parse(currentTour.endDate, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")) }
-
-        startDate = startDate?.plusDays(1)
-        endDate = endDate?.plusDays(1)
-
-        DatePickerState(
-            locale = Locale.getDefault(),
-            initialSelectedDateMillis = selectedDay.fromDayToMillis() + 1000 * 60 * 60 * 12,
-            initialDisplayMode = DisplayMode.Picker,
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                    val selectedDate = LocalDate.ofEpochDay(utcTimeMillis / 86400000)
-                    return !selectedDate.isBefore(startDate?.toLocalDate()) && !selectedDate.isAfter(endDate?.toLocalDate())
-                }
-            }
-        )
+    LaunchedEffect(key1 = true) {
+        selectedDay = getClosestTourDate(tour)
+        calendarViewModel.fetchCalendar(tourId, selectedDay)
     }
 
-    calendarViewModel.fetchCalendar(tourId, selectedDay)
+    val datePickerState by remember(tour) {
+        val startDate = tour.startDate?.let { LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")) }
+        val endDate = tour.endDate?.let { LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")) }
+
+        val defaultStartDate = LocalDateTime.now().plusDays(0) // Default values before tour initialization
+        val defaultEndDate = LocalDateTime.now().plusDays(2) // Default values before tour initialization
+
+        derivedStateOf {
+            val finalStartDate = startDate?.plusHours(12) ?: defaultStartDate
+            val finalEndDate = endDate?.plusHours(12) ?: defaultEndDate
+
+            DatePickerState(
+                locale = Locale.getDefault(),
+                initialSelectedDateMillis = selectedDay.fromDayToMillis() + 1000 * 60 * 60 * 12,
+                initialDisplayMode = DisplayMode.Picker,
+                selectableDates = object : SelectableDates {
+                    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                        val selectedDate = LocalDate.ofEpochDay(utcTimeMillis / 86400000)
+                        return !selectedDate.isBefore(finalStartDate.toLocalDate()) && !selectedDate.isAfter(finalEndDate.toLocalDate())
+                    }
+                }
+            )
+        }
+    }
+
     val calendar by calendarViewModel.calendar.collectAsState()
 
     val activityCurrent = findClosestActivity(calendar.dayProgram?.getActivityList)
@@ -126,6 +136,15 @@ fun CalendarScreen(
             )
         }
     ) { innerPadding ->
+
+        /*
+         * Calendar has three different views:
+         *      1) day plan is created for selected day and it is current day
+         *      2) day plan is created for selected day and it is not current day
+         *      3) day plan is not created for selected day
+         *
+         * */
+
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -142,6 +161,7 @@ fun CalendarScreen(
             }
 
             if (calendar.dayProgram?.dayId != null) {
+                // Calendar view 1)
                 if (selectedDay == getCurrentDate() && activityCurrent != null) {
                     Section(
                         title = "Právě probíhá",
@@ -158,58 +178,44 @@ fun CalendarScreen(
                         )
                     }
                 }
+                // Calendar view 2)
                 else {
                     Section(
                         title = "Denní plán",
                         onButtonClick = { navController.navigate("daily_plan/$tourId/$selectedDay") },
                         buttonTitle = "Zobrazit vše"
                     ) {
-                        Column {
-                            DesignedCard(
-                                title = calendar.dayProgram?.programMorning?.name?: "Nepojmenovaná aktivita",
-                                topic = calendar.dayProgram?.programMorning?.type,
-                                startTime = calendar.dayProgram?.programMorning?.startTime,
-                                endTime = calendar.dayProgram?.programMorning?.endTime,
-                                timeInDayFormat = false
+                        ActivityList(
+                            listOf(
+                                calendar.dayProgram?.programMorning,
+                                calendar.dayProgram?.programAfternoon,
+                                calendar.dayProgram?.programEvening,
+                                calendar.dayProgram?.programNight
                             )
-                            DesignedCard(
-                                title = calendar.dayProgram?.programAfternoon?.name?: "Nepojmenovaná aktivita",
-                                topic = calendar.dayProgram?.programAfternoon?.type,
-                                startTime = calendar.dayProgram?.programAfternoon?.startTime,
-                                endTime = calendar.dayProgram?.programAfternoon?.endTime,
-                                timeInDayFormat = false
-                            )
-                            DesignedCard(
-                                title = calendar.dayProgram?.programEvening?.name?: "Nepojmenovaná aktivita",
-                                topic = calendar.dayProgram?.programEvening?.type,
-                                startTime = calendar.dayProgram?.programEvening?.startTime,
-                                endTime = calendar.dayProgram?.programEvening?.endTime,
-                                timeInDayFormat = false
-                            )
-                            DesignedCard(
-                                title = calendar.dayProgram?.programNight?.name?: "Nepojmenovaná aktivita",
-                                topic = calendar.dayProgram?.programNight?.type,
-                                startTime = calendar.dayProgram?.programNight?.startTime,
-                                endTime = calendar.dayProgram?.programNight?.endTime,
-                                timeInDayFormat = false
-                            )
-                        }
+                        )
                     }
                 }
-
             }
+            // Calendar view 3)
             else {
-                Section(
-                    title = "Denní plán",
-                    onButtonClick = { navController.navigate("daily_plan_create/$tourId/$selectedDay") },
-                    buttonTitle = "Vytvořit"
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    DesignedCard(
-                        title = "Denní plán není vytvořený",
-                        description = "Můžete požádat hlavní vedoucího o vytvoření denního plánu"
-                    )
+                    Section(
+                        title = "Denní plán",
+                        onButtonClick = { navController.navigate("daily_plan_create/$tourId/$selectedDay") },
+                        buttonTitle = "Vytvořit"
+                    ) {
+                        DesignedCard(
+                            title = "Denní plán není vytvořený",
+                            description = "Můžete požádat hlavní vedoucího o vytvoření denního plánu"
+                        )
+                    }
                     Image(
-                        painter = painterResource(id = R.drawable.search_rafiki),
+                        painter = painterResource(id = R.drawable.calendar_pana),
                         contentDescription = null
                     )
                 }
@@ -227,31 +233,41 @@ fun CalendarScreen(
                 }
             }
 
-            /*
-            Section(title = "Služba") {
-                DesignedCard(
-                    title = "Turnus momentálně nemá přiřazenou službu",
-                    description = "Službu může přiřadit hlavní vedoucí, nebo zástupci."
-                )
-            }*/
-
             if (showSelectDayDialog) {
                 DatePickerDialog(
-                    modifier = Modifier
-                        .padding(20.dp),
                     onDismissRequest = { showSelectDayDialog = false },
                     confirmButton = {
                         selectedDay = formatMillisToIsoDay(datePickerState.selectedDateMillis)
-                        println("Zvolený den $selectedDay")
                         calendarViewModel.fetchCalendar(tourId, selectedDay)
-                        //showSelectDayDialog = false
                     }
                 ) {
                     DatePicker(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small),
                         state = datePickerState,
-                        title = {Text("Zvolte datum")}
-                        )
+                        title = {
+                            Text(
+                                modifier = Modifier.padding(start = 20.dp, top = 20.dp), text = "Zvolte datum"
+                            )
+                        }
+                    )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun ActivityList(activityList: List<Activity?>) {
+    Column {
+        activityList.forEach {
+            if (it != null) {
+                DesignedCard(
+                    title = it.name ?: "Nepojmenovaná aktivita",
+                    topic = it.type,
+                    startTime = it.startTime,
+                    endTime = it.endTime,
+                    timeInDayFormat = false
+                )
             }
         }
     }

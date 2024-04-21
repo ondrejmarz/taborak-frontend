@@ -14,8 +14,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.serialization.SerializationException
+import java.io.IOException
 
-class UserViewModel : ViewModel() {
+class SettingsViewModel : ViewModel() {
 
     private val _users = MutableStateFlow(UserState())
     val users: StateFlow<UserState> = _users.asStateFlow()
@@ -41,10 +42,15 @@ class UserViewModel : ViewModel() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun checkIfUserIsInDatabase(user: UserData?) {
-        user?.let {
-            ApiClient.saveUser(it) { }
+    fun acceptApplication(tourId: String, userId: String?) {
+        userId?.let {
+            ApiClient.addTourMember(tourId, it) { fetchAllUsersFromTour(tourId) }
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun deleteMember(tourId: String, userId: String) {
+        ApiClient.deleteTourMember(tourId, userId, { fetchAllUsersFromTour(tourId) })
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -52,6 +58,11 @@ class UserViewModel : ViewModel() {
         userId?.let {
             ApiClient.addTourApplication(tourId, it) { }
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun deleteApplication(tourId: String, userId: String) {
+        ApiClient.deleteTourApplication(tourId, userId) { fetchAllUsersFromTour(tourId) }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -70,6 +81,15 @@ class UserViewModel : ViewModel() {
                 )
             }
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun deleteTour(tourId: String) {
+        ApiClient.deleteTour(
+            tourId,
+            onSuccess = {  },
+            onFailure = { e: IOException -> println(e.message) }
+        )
     }
 
     private fun createUserList(responseBody: String): List<UserData> {

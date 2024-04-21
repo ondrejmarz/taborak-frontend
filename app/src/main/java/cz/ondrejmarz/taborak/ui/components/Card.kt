@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputDayString
 import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputTimeString
@@ -36,15 +37,15 @@ fun DesignedCard(
 ) {
     Card(
         onClick = { onClickAction?.invoke() },
-        enabled = enabled == true || onClickAction == null,
+        enabled = onClickAction != null,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 10.dp)
             .wrapContentWidth(Alignment.CenterHorizontally),
         colors = CardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = if (enabled == true) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = if (enabled == true) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
             disabledContentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
         shape = MaterialTheme.shapes.small
@@ -100,7 +101,7 @@ fun DesignedCard(
                 Text(text = description, style = MaterialTheme.typography.bodyMedium)
             }
 
-            if (enabled == true && button != null) {
+            if (onClickAction != null && button != null) {
 
                 Text(
                     //color = MaterialTheme.colorScheme.secondary,
@@ -112,6 +113,29 @@ fun DesignedCard(
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun DesignedCardPreview() {
+    Column {
+        DesignedCard(
+            title = "Náhled jedné karty",
+            topic = "Komponenta",
+            description = "Jen se koukni jak vypadám",
+            enabled = true,
+            button = "Tlačítko",
+            onClickAction = {},
+        )
+        DesignedCard(
+            title = "Náhled druhé karty",
+            topic = "Komponenta",
+            description = "Proč jsem neaktivní? :(",
+            enabled = false,
+            button = "Tlačítko",
+            onClickAction = {},
+        )
     }
 }
 

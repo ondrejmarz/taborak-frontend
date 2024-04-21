@@ -2,6 +2,7 @@ package cz.ondrejmarz.taborak.ui.screens.forms
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -111,7 +112,7 @@ fun TourFormScreen(
                     .padding(bottom = 16.dp)
             )
 
-            DateRangePicker(state = dateRangePickerState)
+            DateRangePicker(modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small), state = dateRangePickerState)
 
             Button(
                 onClick = {

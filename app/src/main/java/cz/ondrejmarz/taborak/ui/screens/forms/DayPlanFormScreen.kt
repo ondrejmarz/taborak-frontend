@@ -2,6 +2,7 @@ package cz.ondrejmarz.taborak.ui.screens.forms
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -134,7 +135,7 @@ fun DayPlanFormScreen(
                             }
                         }
                         0, 7 -> {
-                            if (currentFieldIndex == 0) { TimePicker(state = wakeUpTime, ) }
+                            if (currentFieldIndex == 0) { TimePicker(state = wakeUpTime) }
                             if (currentFieldIndex == 7) { TimePicker(state = lightsOut)  }
                         }
                         else -> {

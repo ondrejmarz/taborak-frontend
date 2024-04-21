@@ -13,14 +13,20 @@ import java.io.IOException
 
 object ApiClient {
 
-    private val client = OkHttpClient()
-    private val urlPath = "http://10.0.2.2:8080"
+    private val urlPath = "https://taborak.onrender.com"
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun fetchTours(onSuccess: (String) -> Unit) {
         runBlocking {
             val url = "$urlPath/tours"
-            RequestManagerOkHttp.makeGetRequest(url, onSuccess, { error -> println(error) })
+            RequestManagerOkHttp.makeGetRequest(url, onSuccess) { error -> println(error) }
+        }
+    }
+
+    fun fetchTour(tourId: String, onSuccess: (String) -> Unit) {
+        runBlocking {
+            val url = "$urlPath/tours/$tourId"
+            RequestManagerOkHttp.makeGetRequest(url, onSuccess) { error -> println(error) }
         }
     }
 

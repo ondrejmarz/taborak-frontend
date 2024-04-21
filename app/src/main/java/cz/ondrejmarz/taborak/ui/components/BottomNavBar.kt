@@ -27,10 +27,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ramcosta.composedestinations.spec.Direction
 import cz.ondrejmarz.taborak.AppDestination
+import cz.ondrejmarz.taborak.appTabRowScreens
 import java.util.Locale
 
 @Composable
@@ -81,27 +83,10 @@ private fun AppTab(
             tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
-    /*
-    Row(
-        modifier = Modifier
-            .padding(16.dp)
-            .selectable(
-                selected = selected,
-                onClick = onSelected,
-                role = Role.Tab,
-            )
-    ) {
-        Column {
-            Icon(
-                imageVector = icon,
-                contentDescription = text,
-                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-            /*
-            if (selected) {
-                Text(text.uppercase(Locale.getDefault()))
-            }
-            */
-        }
-    }
-    */
+}
+
+@Preview
+@Composable
+fun BottomNavBarPreview() {
+    BottomNavBar(tourId = "", allScreens = appTabRowScreens, onItemSelected = { }, currentScreen = "Kalendář")
 }

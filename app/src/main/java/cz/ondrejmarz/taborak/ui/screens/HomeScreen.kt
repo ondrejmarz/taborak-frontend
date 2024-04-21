@@ -4,16 +4,12 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -22,10 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -34,20 +28,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.data.models.Tour
 import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
 import cz.ondrejmarz.taborak.data.viewmodel.UserViewModel
-import cz.ondrejmarz.taborak.ui.components.TourList
+import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.MiddleDarkButton
 import cz.ondrejmarz.taborak.ui.components.Section
+import cz.ondrejmarz.taborak.ui.components.TwoOptionButtons
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(
-    navController: NavHostController,
     userId: String? = "",
     onLogoutClick: () -> Unit,
     onTourClick: (String, String) -> Unit,
@@ -55,7 +48,7 @@ fun HomeScreen(
     tourViewModel: TourViewModel = viewModel(),
     userViewModel: UserViewModel = viewModel()
 ) {
-    tourViewModel.fetchTours()
+    LaunchedEffect(key1 = true) { tourViewModel.fetchTours() }
 
     val tourList by tourViewModel.tours.collectAsState()
 
@@ -90,8 +83,7 @@ fun HomeScreen(
                     onTourAccessDenied = { tourId: String ->
                         showBottomSheetAccessDenied = true
                         selectedTour = tourId
-                    },
-                    Modifier.fillMaxSize()
+                    }
                 )
             }
 
@@ -132,46 +124,62 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(20.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            Button(
-                                shape = MaterialTheme.shapes.small,
-                                onClick = {
-                                    userViewModel.sendApplication(selectedTour, userId)
-                                    scope.launch {
-                                        sheetState.hide()
-                                    }.invokeOnCompletion {
-                                        if (!sheetState.isVisible) {
-                                            showBottomSheetAccessDenied = false
-                                        }
+                        TwoOptionButtons(
+                            onLeftClick = {
+                                scope.launch {
+                                    sheetState.hide()
+                                }.invokeOnCompletion {
+                                    if (!sheetState.isVisible) {
+                                        showBottomSheetAccessDenied = false
                                     }
                                 }
-                            ) {
-                                Text(text = "Poslat žádost")
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Button(
-                                shape = MaterialTheme.shapes.small,
-                                onClick = {
-                                    scope.launch {
-                                        sheetState.hide()
-                                    }.invokeOnCompletion {
-                                        if (!sheetState.isVisible) {
-                                            showBottomSheetAccessDenied = false
-                                        }
+                            },
+                            onLeftText = "Zrušit",
+                            onRightClick = {
+                                userViewModel.sendApplication(selectedTour, userId)
+                                scope.launch {
+                                    sheetState.hide()
+                                }.invokeOnCompletion {
+                                    if (!sheetState.isVisible) {
+                                        showBottomSheetAccessDenied = false
                                     }
                                 }
-                            ) {
-                                Text(text = "Zrušit")
-                            }
-                        }
+                            },
+                            onRightText = "Poslat žádost"
+                        )
                         Spacer(modifier = Modifier.height(10.dp))
                     }
                 }
             }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun TourList(
+    tourList: List<Tour>?,
+    userId: String?,
+    onTourSelected: (String) -> Unit,
+    onTourAccessDenied: (String) -> Unit
+) {
+    tourList?.forEach { tour ->
+        val isMember = tour.members?.contains(userId)
+        if (tour.tourId != null) {
+            DesignedCard(
+                title = tour.title ?: "Nepojmenovaný turnus",
+                topic = tour.topic,
+                description = tour.description,
+                startTime = tour.startDate,
+                endTime = tour.endDate,
+                timeInDayFormat = true,
+                enabled = isMember,
+                button = if (isMember == true) "Otevřít" else "Požádat o přijetí",
+                onClickAction = {
+                    if (isMember == true) { onTourSelected(tour.tourId) }
+                    else { onTourAccessDenied(tour.tourId) }
+                }
+            )
         }
     }
 }

@@ -2,7 +2,10 @@ package cz.ondrejmarz.taborak.ui.screens.details
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,8 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
@@ -26,9 +31,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerLayoutType
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,11 +52,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.data.models.Activity
+import cz.ondrejmarz.taborak.data.util.convertTimePickerStateToStringDate
+import cz.ondrejmarz.taborak.data.util.convertToTimestamp
+import cz.ondrejmarz.taborak.data.util.formatDateStringToGivenFormatString
 import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputDayString
 import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputTimeString
 import cz.ondrejmarz.taborak.data.viewmodel.CalendarViewModel
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.Section
+import cz.ondrejmarz.taborak.ui.components.TwoOptionButtons
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -170,7 +183,6 @@ fun DayPlanScreen(
                             ) {
                                 Text(text = selectedActivity.desc?: "Neznámo")
                                 selectedActivity.startTime?.let { Text(text = ("Od: " + formatDateStringToOutputTimeString(it))) }
-                                selectedActivity.endTime?.let { Text(text = ("Do: " + formatDateStringToOutputTimeString(it))) }
                             }
                         }
 
@@ -182,7 +194,6 @@ fun DayPlanScreen(
                             ) {
                                 selectedActivity.desc?.let { Text(text = it) }
                                 selectedActivity.startTime?.let { Text(text = ("Od: " + formatDateStringToOutputTimeString(it))) }
-                                selectedActivity.endTime?.let { Text(text = ("Do: " + formatDateStringToOutputTimeString(it))) }
                             }
                         }
 
@@ -195,7 +206,6 @@ fun DayPlanScreen(
                                 Text(text = selectedActivity.name?: "Neznámo")
                                 Text(text = selectedActivity.desc?: "Bez popisku")
                                 selectedActivity.startTime?.let { Text(text = ("Od: " + formatDateStringToOutputTimeString(it))) }
-                                selectedActivity.endTime?.let { Text(text = ("Do: " + formatDateStringToOutputTimeString(it))) }
                             }
                         }
                     }
@@ -206,82 +216,109 @@ fun DayPlanScreen(
         if (showEdit) {
             ModalBottomSheet(
                 onDismissRequest = {
-                    showDetail = false
+                    scopeEdit.launch {
+                        sheetStateEdit.hide()
+                    }.invokeOnCompletion {
+                        if (!sheetStateEdit.isVisible) {
+                            showEdit = false
+                        }
+                    }
                 },
                 sheetState = sheetStateEdit
             ) {
                 var activityName    by remember { mutableStateOf(selectedActivity.name) }
                 var activityDesc    by remember { mutableStateOf(selectedActivity.desc) }
-                var activityStart   by remember { mutableStateOf(selectedActivity.startTime) }
-                var activityEnd     by remember { mutableStateOf(selectedActivity.endTime) }
                 var activityVisible by remember { mutableStateOf(selectedActivity.visible) }
+
+                val initHour = formatDateStringToGivenFormatString(selectedActivity.startTime, "HH")?: 0
+                val initMinute = formatDateStringToGivenFormatString(selectedActivity.startTime, "mm")?: 0
+
+                val startTimeState = rememberTimePickerState( initHour+2, initMinute, true)
 
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .padding(vertical = 20.dp)
+                        .verticalScroll(rememberScrollState())
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (selectedActivity.type) {
                         "Jídlo" -> Section(title = selectedActivity.name?: "Jídlo") {
-                            Column(
-                                modifier = Modifier
-                                    .padding(vertical = 20.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                OutlinedTextField(
-                                    value = activityDesc?: "",
-                                    onValueChange = { text -> activityDesc = text },
-                                    label = { selectedActivity.name },
-                                    readOnly = false,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                Text(text = ("Od: " + formatDateStringToOutputTimeString(selectedActivity.startTime)))
-                                if (selectedActivity.endTime == null) Text(text = "Do: Nespecifikováno")
-                                else Text(text = "Do: " + formatDateStringToOutputTimeString(selectedActivity.endTime))
-                                Text(text = ("Viditelné? " + if (selectedActivity.visible == true) "Ano" else "Ne"))
-                            }
+                            OutlinedTextField(
+                                value = activityDesc?: "",
+                                onValueChange = { text -> activityDesc = text },
+                                label = { selectedActivity.name },
+                                readOnly = false,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                         "Milník" -> Section(title = selectedActivity.name?: "Aktivita") {
-                            Column(
-                                modifier = Modifier
-                                    .padding(20.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                selectedActivity.desc?.let { Text(text = it) }
-                                Text(text = ("Od: " + formatDateStringToOutputTimeString(selectedActivity.startTime)))
-                                Text(text = ("Do: " + formatDateStringToOutputTimeString(selectedActivity.endTime)))
-                                Text(text = ("Viditelné? " + if (selectedActivity.visible == true) "Ano" else "Ne"))
-                            }
+                            OutlinedTextField(
+                                value = activityDesc?: "",
+                                onValueChange = { text -> activityDesc = text },
+                                label = { selectedActivity.name },
+                                readOnly = false,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            //Text(text = ("Od: " + formatDateStringToOutputTimeString(selectedActivity.startTime)))
                         }
-
                         else -> Section(title = selectedActivity.type?: "Aktivita") {
-                            Column(
-                                modifier = Modifier
-                                    .padding(20.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                Text(text = selectedActivity.name?: "Neznámo")
-                                Text(text = selectedActivity.desc?: "Bez popisku")
-                                Text(text = ("Od: " + formatDateStringToOutputTimeString(selectedActivity.startTime)))
-                                Text(text = ("Do: " + formatDateStringToOutputTimeString(selectedActivity.endTime)))
-                                Text(text = ("Viditelné? " + if (selectedActivity.visible == true) "Ano" else "Ne"))
-                            }
+
+                            OutlinedTextField(
+                                value = activityName?: "",
+                                onValueChange = { text -> activityName = text },
+                                label = { Text(text = "Název činnosti") },
+                                readOnly = false,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            OutlinedTextField(
+                                value = activityDesc?: "",
+                                onValueChange = { text -> activityDesc = text },
+                                label = { Text(text = "Popis činnosti") },
+                                readOnly = false,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            //Text(text = ("Od: " + formatDateStringToOutputTimeString(selectedActivity.startTime)))
                         }
                     }
-
-                    //Spacer(modifier = Modifier.height(10.dp))
-
                     Row(
-                        modifier = Modifier
-                            .padding(20.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Button(
-                            shape = MaterialTheme.shapes.small,
-                            onClick = {
+                        Text(text = "Viditelné?")
+                        Switch(checked = activityVisible == true, onCheckedChange = { isChecked ->
+                            activityVisible = isChecked })
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    TimePicker(state = startTimeState)
+
+
+                    Box(
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        TwoOptionButtons(
+                            onLeftClick = {
+                                scopeEdit.launch {
+                                    sheetStateEdit.hide()
+                                }.invokeOnCompletion {
+                                    if (!sheetStateEdit.isVisible) {
+                                        showEdit = false
+                                    }
+                                }
+                            },
+                            onLeftText = "Zrušit",
+                            onRightClick = {
                                 day?.run {
-                                    selectedActivity = selectedActivity.copy( desc = activityDesc )
-                                    calendarViewModel.saveActivity(tourId, day, selectedActivity)
+                                    val editedActivity: Activity = selectedActivity.copy(
+                                        name = activityName,
+                                        desc = activityDesc,
+                                        startTime = convertTimePickerStateToStringDate(startTimeState, selectedActivity.startTime),
+                                        visible = activityVisible
+                                    )
+                                    calendarViewModel.saveActivity(tourId, day, editedActivity)
                                 }
                                 scopeEdit.launch {
                                     sheetStateEdit.hide()
@@ -290,25 +327,9 @@ fun DayPlanScreen(
                                         showEdit = false
                                     }
                                 }
-                            }
-                        ) {
-                            Text(text = "Uložit")
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Button(
-                            shape = MaterialTheme.shapes.small,
-                            onClick = {
-                                scopeEdit.launch {
-                                    sheetStateEdit.hide()
-                                }.invokeOnCompletion {
-                                    if (!sheetStateEdit.isVisible) {
-                                        showEdit = false
-                                    }
-                                }
-                            }
-                        ) {
-                            Text(text = "Zrušit")
-                        }
+                            },
+                            onRightText = "Uložit"
+                        )
                     }
                 }
             }

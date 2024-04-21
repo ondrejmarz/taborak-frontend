@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,8 +24,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import cz.ondrejmarz.taborak.Participants
 import cz.ondrejmarz.taborak.data.models.Group
 import cz.ondrejmarz.taborak.R
 import cz.ondrejmarz.taborak.appTabRowScreens
@@ -49,21 +55,13 @@ fun ParticipantsScreen(
     participantsViewModel: ParticipantsViewModel = viewModel(),
     navController: NavHostController
 ) {
-    participantsViewModel.fetchParticipants(tourId)
-    val participants by participantsViewModel.participants.collectAsState()
-
-    val context = LocalContext.current
-
-    val getContent = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.run {
-            var xlsxContent: ByteArray? = null
-            context.contentResolver.openInputStream(this)?.use { inputStream ->
-                xlsxContent = inputStream.readBytes()
-            }
-            xlsxContent?.let { participantsViewModel.uploadParticipantXlsx(tourId, it) }
-            participantsViewModel.fetchParticipants(tourId)
-        }
+    LaunchedEffect(key1 = true) {
+        participantsViewModel.fetchParticipants(tourId)
     }
+
+    var editMode by remember { mutableStateOf(false) }
+
+    val participants by participantsViewModel.participants.collectAsState()
 
     Scaffold(
         bottomBar = {
@@ -77,18 +75,18 @@ fun ParticipantsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (participants.groupList?.isEmpty() == true) {
+
+        if (participants.groupList?.isEmpty() == true) {
+
+            Column(modifier = Modifier
+                .padding(innerPadding),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Section(
                     title = "Účastníci",
                     onButtonClick = {
-                        getContent.launch("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        navController.navigate("participants_tutorial/$tourId")
                     },
                     buttonTitle = "Nahrát"
                 ) {
@@ -96,26 +94,28 @@ fun ParticipantsScreen(
                         title = "Turnus momentálně nemá žádné účastníky",
                         description = "Seznam účastníků můžete nahrát pomocí tlačítka výše."
                     )
-                    Image(
-                        painter = painterResource(id = R.drawable.children_pana),
-                        contentDescription = null
-                    )
                 }
+                Spacer(modifier = Modifier.height(60.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.children_pana),
+                    contentDescription = null
+                )
             }
-            else {
-                Section(
-                    title = "Účastníci"
+        }
+        else {
+            Section(
+                title = "Účastníci"
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(ScrollState(0)),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.Top,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        participants.groupList?.forEach { group ->
-                            GroupCard(group)
-                            Spacer(modifier = Modifier.height(20.dp))
-                        }
+                    participants.groupList?.forEach { group ->
+                        GroupCard(group)
+                        Spacer(modifier = Modifier.height(20.dp))
                     }
                 }
             }

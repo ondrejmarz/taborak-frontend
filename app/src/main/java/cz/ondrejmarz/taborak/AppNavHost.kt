@@ -11,6 +11,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,6 +23,7 @@ import androidx.navigation.navArgument
 import com.google.android.gms.auth.api.identity.Identity
 import cz.ondrejmarz.taborak.auth.AuthTokenManager
 import cz.ondrejmarz.taborak.auth.GoogleAuthUiClient
+import cz.ondrejmarz.taborak.data.viewmodel.ParticipantsViewModel
 import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
 import cz.ondrejmarz.taborak.data.viewmodel.UserViewModel
 import cz.ondrejmarz.taborak.data.viewmodel.auth.SignInViewModel
@@ -34,6 +36,7 @@ import cz.ondrejmarz.taborak.ui.screens.forms.TourFormScreen
 import cz.ondrejmarz.taborak.ui.screens.menu.TourScreen
 import cz.ondrejmarz.taborak.ui.screens.auth.SignInScreen
 import cz.ondrejmarz.taborak.ui.screens.details.DayPlanScreen
+import cz.ondrejmarz.taborak.ui.screens.details.LoadParticipantsTutorial
 import cz.ondrejmarz.taborak.ui.screens.forms.DayPlanFormScreen
 import kotlinx.coroutines.launch
 
@@ -119,7 +122,6 @@ fun AppNavHost(
             }
 
             HomeScreen(
-                navController,
                 googleAuthUiClient.getSignInUser()?.userId,
                 onLogoutClick = {
                     viewModel.viewModelScope.launch {
@@ -138,11 +140,8 @@ fun AppNavHost(
         }
 
         composable(route = "tour_form") {
-            //val tourViewModel = viewModel<TourViewModel>()
-            val userViewModel = viewModel<UserViewModel>()
             TourFormScreen(
                 navController,
-                //tourViewModel,
                 userData = googleAuthUiClient.getSignInUser()
             )
         }
@@ -165,6 +164,38 @@ fun AppNavHost(
         ) { backStackEntry ->
             val tourId = backStackEntry.arguments?.getString("tourId")
             tourId?.run { ParticipantsScreen(tourId = tourId, navController = navController) }
+        }
+
+        composable(
+            route = "participants_tutorial/{tourId}",
+            arguments = listOf(navArgument("tourId") {
+                type = NavType.StringType
+            })
+        ) { backStackEntry ->
+            val tourId = backStackEntry.arguments?.getString("tourId")
+
+            tourId?.run {
+                val viewModel = viewModel<ParticipantsViewModel>()
+
+                val context = LocalContext.current
+
+                val getContent = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+                    uri?.run {
+                        var xlsxContent: ByteArray? = null
+                        context.contentResolver.openInputStream(this)?.use { inputStream ->
+                            xlsxContent = inputStream.readBytes()
+                        }
+                        xlsxContent?.let { viewModel.uploadParticipantXlsx(tourId, it) }
+                        viewModel.fetchParticipants(tourId)
+                        navController.popBackStack()
+                    }
+                }
+
+                LoadParticipantsTutorial(
+                    { navController.popBackStack() },
+                    { getContent.launch("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") }
+                )
+            }
         }
 
         composable(
