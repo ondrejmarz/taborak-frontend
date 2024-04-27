@@ -2,15 +2,12 @@ package cz.ondrejmarz.taborak.ui.screens.forms
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
@@ -18,7 +15,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -28,7 +24,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerColors
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -38,19 +33,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.semantics.SemanticsProperties.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.data.models.Activity
 import cz.ondrejmarz.taborak.data.models.DayPlan
-import cz.ondrejmarz.taborak.data.models.Tour
 import cz.ondrejmarz.taborak.data.util.convertToTimestamp
-import cz.ondrejmarz.taborak.data.util.formatMillisToIsoDateTime
-import cz.ondrejmarz.taborak.data.viewmodel.CalendarViewModel
-import cz.ondrejmarz.taborak.ui.components.DesignedCard
+import cz.ondrejmarz.taborak.ui.viewmodels.CalendarViewModel
 import cz.ondrejmarz.taborak.ui.components.Section
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -196,7 +186,6 @@ fun DayPlanFormScreen(
                         onClick = {
                             if (day != null && tourId != null) {
                                 calendarViewModel.createNewDayProgram(
-                                    tourId,
                                     day,
                                     DayPlan(
                                         wakeUp = Activity(startTime = convertToTimestamp(wakeUpTime).toString()),

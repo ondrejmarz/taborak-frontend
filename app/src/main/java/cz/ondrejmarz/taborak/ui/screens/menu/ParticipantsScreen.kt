@@ -1,8 +1,6 @@
 package cz.ondrejmarz.taborak.ui.screens.menu
 
 import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
@@ -14,17 +12,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,36 +30,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import cz.ondrejmarz.taborak.Participants
 import cz.ondrejmarz.taborak.data.models.Group
 import cz.ondrejmarz.taborak.R
 import cz.ondrejmarz.taborak.appTabRowScreens
 import cz.ondrejmarz.taborak.data.models.Participant
-import cz.ondrejmarz.taborak.data.viewmodel.ParticipantsViewModel
+import cz.ondrejmarz.taborak.ui.viewmodels.ParticipantsViewModel
 import cz.ondrejmarz.taborak.ui.components.BottomNavBar
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.Section
+import cz.ondrejmarz.taborak.ui.viewmodels.factory.ParticipantsViewModelFactory
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ParticipantsScreen(
     tourId: String,
-    participantsViewModel: ParticipantsViewModel = viewModel(),
+    participantsViewModel: ParticipantsViewModel = viewModel(factory = ParticipantsViewModelFactory(tourId)),
     navController: NavHostController
 ) {
-    LaunchedEffect(key1 = true) {
-        participantsViewModel.fetchParticipants(tourId)
-    }
+    val participants by participantsViewModel.participants.collectAsState()
 
     var editMode by remember { mutableStateOf(false) }
-
-    val participants by participantsViewModel.participants.collectAsState()
+    var selectedParticipants by remember { mutableStateOf(emptyList<Participant>()) }
 
     Scaffold(
         bottomBar = {
@@ -104,7 +97,9 @@ fun ParticipantsScreen(
         }
         else {
             Section(
-                title = "Účastníci"
+                title = "Účastníci",
+                onButtonClick = { editMode = !editMode },
+                buttonTitle = "Rozřadit"
             ) {
                 Column(
                     modifier = Modifier
@@ -114,8 +109,57 @@ fun ParticipantsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     participants.groupList?.forEach { group ->
-                        GroupCard(group)
+                        GroupCard(group, editMode) { selected ->
+                            selectedParticipants = selected
+                        }
                         Spacer(modifier = Modifier.height(20.dp))
+                    }
+                    if (editMode) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Top
+                        ) {
+                            Row {
+                                Button(onClick = {
+                                   participantsViewModel.assignNewParticipants(1, selectedParticipants)
+                                }, shape = MaterialTheme.shapes.small) {
+                                    Text(text = "Oddíl 1")
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Button(onClick = {
+                                    participantsViewModel.assignNewParticipants(2, selectedParticipants)
+                                }, shape = MaterialTheme.shapes.small) {
+                                    Text(text = "Oddíl 2")
+                                }
+                            }
+                            Row {
+                                Button(onClick = {
+                                    participantsViewModel.assignNewParticipants(3, selectedParticipants)
+                                }, shape = MaterialTheme.shapes.small) {
+                                    Text(text = "Oddíl 3")
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Button(onClick = {
+                                    participantsViewModel.assignNewParticipants(4, selectedParticipants)
+                                }, shape = MaterialTheme.shapes.small) {
+                                    Text(text = "Oddíl 4")
+                                }
+                            }
+                            Row {
+                                Button(onClick = {
+                                    participantsViewModel.assignNewParticipants(5, selectedParticipants)
+                                }, shape = MaterialTheme.shapes.small) {
+                                    Text(text = "Oddíl 5")
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Button(onClick = {
+                                    participantsViewModel.assignNewParticipants(6, selectedParticipants)
+                                }, shape = MaterialTheme.shapes.small) {
+                                    Text(text = "Oddíl 6")
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -124,7 +168,8 @@ fun ParticipantsScreen(
 }
 
 @Composable
-fun GroupCard(group: Group) {
+fun GroupCard(group: Group, editMode: Boolean, onSelectedItemsChanged: (List<Participant>) -> Unit) {
+    val selectedParticipants = remember { mutableStateOf(emptyList<Participant>()) }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -164,14 +209,18 @@ fun GroupCard(group: Group) {
                 )
             }
 
-            ParticipantsCard(group.participants)
+            ParticipantsCard(group.participants, selectedParticipants.value, editMode) { selected ->
+                selectedParticipants.value = selected
+                onSelectedItemsChanged(selected)
+            }
             Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
 @Composable
-fun ParticipantsCard(participants: List<Participant>) {
+fun ParticipantsCard(participants: List<Participant>, selectedItems: List<Participant>, editMode: Boolean, onSelectedItemsChanged: (List<Participant>) -> Unit) {
+    val selectedParticipants = remember { mutableStateOf(selectedItems) }
     Card(
         modifier = Modifier
             .fillMaxSize(fraction = 0.9f)
@@ -198,7 +247,20 @@ fun ParticipantsCard(participants: List<Participant>) {
                     modifier = Modifier.weight(9f)
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                if (participant.age != null) {
+                if (editMode) {
+                    Checkbox(
+                        checked = selectedParticipants.value.contains(participant),
+                        onCheckedChange = { isChecked ->
+                            selectedParticipants.value = if (isChecked) {
+                                selectedParticipants.value + participant
+                            } else {
+                                selectedParticipants.value.filter { it != participant }
+                            }
+                            onSelectedItemsChanged(selectedParticipants.value)
+                        }
+                    )
+                }
+                else if (participant.age != null) {
                     Text(
                         text = participant.age + " let",
                         style = MaterialTheme.typography.labelSmall,

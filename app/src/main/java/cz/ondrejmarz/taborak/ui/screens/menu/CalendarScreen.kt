@@ -2,69 +2,55 @@ package cz.ondrejmarz.taborak.ui.screens.menu
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerColors
-import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
-import androidx.compose.material3.DateRangePickerState
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.google.android.material.datepicker.CalendarConstraints
 import cz.ondrejmarz.taborak.R
 import cz.ondrejmarz.taborak.appTabRowScreens
 import cz.ondrejmarz.taborak.data.models.Activity
-import cz.ondrejmarz.taborak.data.models.Tour
 import cz.ondrejmarz.taborak.data.util.formatMillisToIsoDay
 import cz.ondrejmarz.taborak.data.util.fromDayToMillis
 import cz.ondrejmarz.taborak.data.util.fromDayToReadableDay
 import cz.ondrejmarz.taborak.data.util.getCurrentDate
-import cz.ondrejmarz.taborak.data.util.toMillis
-import cz.ondrejmarz.taborak.data.viewmodel.CalendarViewModel
-import cz.ondrejmarz.taborak.data.viewmodel.TourViewModel
+import cz.ondrejmarz.taborak.ui.viewmodels.CalendarViewModel
 import cz.ondrejmarz.taborak.ui.components.BottomNavBar
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.Section
+import cz.ondrejmarz.taborak.ui.components.TwoOptionButtons
+import cz.ondrejmarz.taborak.ui.viewmodels.factory.CalendarViewModelFactory
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -78,20 +64,13 @@ import java.util.TimeZone
 @Composable
 fun CalendarScreen(
     tourId: String,
-    calendarViewModel: CalendarViewModel = viewModel(),
+    calendarViewModel: CalendarViewModel = viewModel(factory = CalendarViewModelFactory(tourId)),
     navController: NavHostController
 ) {
-    LaunchedEffect(key1 = true) { calendarViewModel.fetchTour(tourId) }
     val tour by calendarViewModel.tour.collectAsState()
+    val day by calendarViewModel.day.collectAsState()
 
     var showSelectDayDialog by remember { mutableStateOf(false) }
-
-    var selectedDay by rememberSaveable { mutableStateOf(getCurrentDate()) }
-
-    LaunchedEffect(key1 = true) {
-        selectedDay = getClosestTourDate(tour)
-        calendarViewModel.fetchCalendar(tourId, selectedDay)
-    }
 
     val datePickerState by remember(tour) {
         val startDate = tour.startDate?.let { LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")) }
@@ -106,7 +85,7 @@ fun CalendarScreen(
 
             DatePickerState(
                 locale = Locale.getDefault(),
-                initialSelectedDateMillis = selectedDay.fromDayToMillis() + 1000 * 60 * 60 * 12,
+                initialSelectedDateMillis = day.fromDayToMillis() + 1000 * 60 * 60 * 12,
                 initialDisplayMode = DisplayMode.Picker,
                 selectableDates = object : SelectableDates {
                     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
@@ -157,15 +136,15 @@ fun CalendarScreen(
                 shape = MaterialTheme.shapes.small,
                 onClick = { showSelectDayDialog = true }
             ) {
-                Text(text = "Vybraný den: " + selectedDay.fromDayToReadableDay())
+                Text(text = "Vybraný den: " + day.fromDayToReadableDay())
             }
 
             if (calendar.dayProgram?.dayId != null) {
                 // Calendar view 1)
-                if (selectedDay == getCurrentDate() && activityCurrent != null) {
+                if (day == getCurrentDate() && activityCurrent != null) {
                     Section(
                         title = "Právě probíhá",
-                        onButtonClick = { navController.navigate("daily_plan/$tourId/$selectedDay") },
+                        onButtonClick = { navController.navigate("daily_plan/$tourId/$day") },
                         buttonTitle = "Zobrazit vše"
                     ) {
                         DesignedCard(
@@ -182,7 +161,7 @@ fun CalendarScreen(
                 else {
                     Section(
                         title = "Denní plán",
-                        onButtonClick = { navController.navigate("daily_plan/$tourId/$selectedDay") },
+                        onButtonClick = { navController.navigate("daily_plan/$tourId/$day") },
                         buttonTitle = "Zobrazit vše"
                     ) {
                         ActivityList(
@@ -206,7 +185,7 @@ fun CalendarScreen(
                 ) {
                     Section(
                         title = "Denní plán",
-                        onButtonClick = { navController.navigate("daily_plan_create/$tourId/$selectedDay") },
+                        onButtonClick = { navController.navigate("daily_plan_create/$tourId/$day") },
                         buttonTitle = "Vytvořit"
                     ) {
                         DesignedCard(
@@ -232,25 +211,59 @@ fun CalendarScreen(
                     }
                 }
             }
+        }
 
-            if (showSelectDayDialog) {
-                DatePickerDialog(
-                    onDismissRequest = { showSelectDayDialog = false },
-                    confirmButton = {
-                        selectedDay = formatMillisToIsoDay(datePickerState.selectedDateMillis)
-                        calendarViewModel.fetchCalendar(tourId, selectedDay)
-                    }
-                ) {
-                    DatePicker(
-                        modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small),
-                        state = datePickerState,
-                        title = {
-                            Text(
-                                modifier = Modifier.padding(start = 20.dp, top = 20.dp), text = "Zvolte datum"
-                            )
+        if (showSelectDayDialog) {
+
+            DatePickerDialog(
+                shape = MaterialTheme.shapes.small,
+                tonalElevation = 0.dp,
+                //modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small),
+                onDismissRequest = { showSelectDayDialog = false },
+                dismissButton = {
+                    OutlinedButton(
+                        colors = ButtonColors(
+                            containerColor = MaterialTheme.colorScheme.onPrimary,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                            disabledContainerColor = MaterialTheme.colorScheme.surface,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        shape = MaterialTheme.shapes.small,
+                        onClick = {
+                            showSelectDayDialog = false
                         }
-                    )
+                    ) {
+                        Text(text = "Zrušit")
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        //modifier = Modifier.padding(end = 20.dp),
+                        shape = MaterialTheme.shapes.small,
+                        onClick = {
+                            calendarViewModel.daySelected(formatMillisToIsoDay(datePickerState.selectedDateMillis))
+                            showSelectDayDialog = false
+                        }
+                    ) {
+                        Text(text = "Potvrdit")
+                    }
                 }
+            ) {
+                DatePicker(
+                    state = datePickerState,
+                    title = {
+                        Box(modifier = Modifier.padding(start = 20.dp, top = 20.dp)) {
+                            Text(text = "Zvolte datum")
+                        }
+                    },
+                    headline = {
+                        Box(modifier = Modifier.padding(start = 20.dp, bottom = 10.dp)) {
+                            Text(text = formatMillisToIsoDay(datePickerState.selectedDateMillis).fromDayToReadableDay(), style = MaterialTheme.typography.titleLarge)
+                        }
+                    },
+                    showModeToggle = false
+                )
             }
         }
     }
@@ -286,33 +299,7 @@ fun getMenuItems(activityList: List<Activity>?): List<Activity>? {
     return if (menuItems.isEmpty()) null else menuItems
 }
 
-fun getClosestTourDate(currentTour: Tour?): String {
 
-    if (currentTour == null) return getCurrentDate()
-
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.getDefault())
-    val dateOutputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    val currentDate = Date()
-
-    if (currentTour.startDate == null || currentTour.endDate == null) return getCurrentDate()
-
-    val startDate = dateFormat.parse(currentTour.startDate)
-    val endDate = dateFormat.parse(currentTour.endDate)
-
-    if (startDate == null || endDate == null) return getCurrentDate()
-
-    return when {
-        currentDate.after(endDate) -> {
-            dateOutputFormat.format(endDate)
-        }
-        currentDate.before(startDate) -> {
-            dateOutputFormat.format(startDate)
-        }
-        else -> {
-            dateOutputFormat.format(currentDate)
-        }
-    }
-}
 
 @RequiresApi(Build.VERSION_CODES.O)
 fun findClosestActivity(activityList: List<Activity>?): Activity? {

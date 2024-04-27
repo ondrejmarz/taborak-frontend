@@ -2,8 +2,6 @@ package cz.ondrejmarz.taborak.ui.screens.details
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.gestures.ScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,28 +11,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerLayoutType
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
@@ -47,20 +39,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.data.models.Activity
 import cz.ondrejmarz.taborak.data.util.convertTimePickerStateToStringDate
-import cz.ondrejmarz.taborak.data.util.convertToTimestamp
 import cz.ondrejmarz.taborak.data.util.formatDateStringToGivenFormatString
-import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputDayString
 import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputTimeString
-import cz.ondrejmarz.taborak.data.viewmodel.CalendarViewModel
+import cz.ondrejmarz.taborak.ui.viewmodels.CalendarViewModel
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.Section
 import cz.ondrejmarz.taborak.ui.components.TwoOptionButtons
+import cz.ondrejmarz.taborak.ui.viewmodels.factory.CalendarViewModelFactory
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -69,10 +59,10 @@ import kotlinx.coroutines.launch
 fun DayPlanScreen(
     tourId: String,
     day: String?,
-    calendarViewModel: CalendarViewModel = viewModel(),
+    calendarViewModel: CalendarViewModel = viewModel(factory = CalendarViewModelFactory(tourId)),
     navController: NavHostController
 ) {
-    day?.let { calendarViewModel.fetchCalendar(tourId, it) }
+    day?.let { calendarViewModel.fetchCalendar(it) }
 
     val calendar by calendarViewModel.calendar.collectAsState()
 
@@ -111,48 +101,41 @@ fun DayPlanScreen(
         },
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(20.dp)
-        ) {
-            val activityList = calendar.dayProgram?.getActivityList?.sortedBy { it.startTime }
-            if (activityList != null) {
-                itemsIndexed(activityList) { index, activity ->
-                    if (activity.visible == true || editMode == true) {
-                        when (activity.type) {
-                            "Jídlo" -> DesignedCard(
-                                title = activity.name?: "Nepojmenovaná aktivita",
-                                description = activity.desc,
-                                startTime = activity.startTime,
-                                endTime = activity.endTime,
-                                timeInDayFormat = false,
-                                enabled = true,
-                                button = if (editMode) "Upravit aktivitu" else null,
-                                onClickAction = { onClickAction(activity) }
-                            )
-                            "Milník" -> DesignedCard(
-                                title = activity.name?: "Nepojmenovaná aktivita",
-                                startTime = activity.startTime,
-                                endTime = activity.endTime,
-                                timeInDayFormat = false,
-                                enabled = true,
-                                button = if (editMode) "Upravit aktivitu" else null,
-                                onClickAction = { onClickAction(activity) }
-                            )
-                            else -> DesignedCard(
-                                title = activity.name?: "Nepojmenovaná aktivita",
-                                topic = activity.type,
-                                //description = activity.desc,
-                                startTime = activity.startTime,
-                                endTime = activity.endTime,
-                                timeInDayFormat = false,
-                                enabled = true,
-                                button = if (editMode) "Upravit aktivitu" else null,
-                                onClickAction = { onClickAction(activity) }
-                            )
-                        }
-                    }
+
+        val activityList = calendar.dayProgram?.getActivityList?.sortedBy { it.startTime }
+        activityList?.forEach { activity ->
+            if (activity.visible == true || editMode == true) {
+                when (activity.type) {
+                    "Jídlo" -> DesignedCard(
+                        title = activity.name?: "Nepojmenovaná aktivita",
+                        description = activity.desc,
+                        startTime = activity.startTime,
+                        endTime = activity.endTime,
+                        timeInDayFormat = false,
+                        enabled = true,
+                        button = if (editMode) "Upravit aktivitu" else null,
+                        onClickAction = { onClickAction(activity) }
+                    )
+                    "Milník" -> DesignedCard(
+                        title = activity.name?: "Nepojmenovaná aktivita",
+                        startTime = activity.startTime,
+                        endTime = activity.endTime,
+                        timeInDayFormat = false,
+                        enabled = true,
+                        button = if (editMode) "Upravit aktivitu" else null,
+                        onClickAction = { onClickAction(activity) }
+                    )
+                    else -> DesignedCard(
+                        title = activity.name?: "Nepojmenovaná aktivita",
+                        topic = activity.type,
+                        //description = activity.desc,
+                        startTime = activity.startTime,
+                        endTime = activity.endTime,
+                        timeInDayFormat = false,
+                        enabled = true,
+                        button = if (editMode) "Upravit aktivitu" else null,
+                        onClickAction = { onClickAction(activity) }
+                    )
                 }
             }
         }
@@ -318,7 +301,7 @@ fun DayPlanScreen(
                                         startTime = convertTimePickerStateToStringDate(startTimeState, selectedActivity.startTime),
                                         visible = activityVisible
                                     )
-                                    calendarViewModel.saveActivity(tourId, day, editedActivity)
+                                    calendarViewModel.saveActivity(day, editedActivity)
                                 }
                                 scopeEdit.launch {
                                     sheetStateEdit.hide()

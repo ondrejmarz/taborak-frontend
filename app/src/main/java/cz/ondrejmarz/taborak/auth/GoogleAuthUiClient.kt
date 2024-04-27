@@ -3,7 +3,6 @@ package cz.ondrejmarz.taborak.auth
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
-import android.provider.Settings.Global.getString
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.BeginSignInRequest.GoogleIdTokenRequestOptions
 import com.google.android.gms.auth.api.identity.SignInClient
@@ -42,11 +41,7 @@ class GoogleAuthUiClient(
             val user = auth.signInWithCredential(googleCredentials).await().user
             SignInResult(
                 data = user?.run {
-                    UserData(
-                        userId = uid,
-                        userName = displayName,
-                        email = email
-                    )
+                    UserData( userId = uid, userName = displayName, email = email )
                 },
                 errorMessage = null
             )

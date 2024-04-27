@@ -1,4 +1,4 @@
-package cz.ondrejmarz.taborak.data.viewmodel.states
+package cz.ondrejmarz.taborak.ui.viewmodels.states
 
 import cz.ondrejmarz.taborak.data.models.Group
 
