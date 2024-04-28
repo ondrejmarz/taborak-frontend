@@ -17,7 +17,7 @@ fun MiddleDarkButton(
     Button(
         onClick = onClickButton,
         modifier = Modifier
-            .padding(bottom = 20.dp),
+            .padding(bottom = 16.dp),
         shape = MaterialTheme.shapes.small,
         colors = ButtonColors(
             containerColor = MaterialTheme.colorScheme.onSurfaceVariant,

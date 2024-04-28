@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.Snackbar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,52 +54,9 @@ fun AppNavHost(
 
         composable(route = SignIn.route) {
 
-            val viewModel = viewModel<SignInViewModel>()
-
-            val state by viewModel.state.collectAsStateWithLifecycle()
-
-            val launcher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.StartIntentSenderForResult(),
-                onResult = { result ->
-                    if(result.resultCode == RESULT_OK) {
-                        viewModel.viewModelScope.launch {
-                            val signInResult = googleAuthUiClient.signInWithIntent(
-                                intent = result.data ?: return@launch
-                            )
-                            viewModel.onSignInResult(signInResult)
-                        }
-                    }
-                }
-            )
-
-            LaunchedEffect(key1 = state.isSignInSuccessful) {
-                if(state.isSignInSuccessful) {
-                    Toast.makeText(
-                        applicationContext,
-                        "Úspěšné přihlášení",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    googleAuthUiClient.setSignInUserToken()?.let {
-                        AuthTokenManager.saveAuthToken(it) }
-                    viewModel.checkIfUserIsInDatabase(googleAuthUiClient.getSignInUser())
-                    navController.navigate("home")
-                    viewModel.resetState()
-                }
-            }
-
             SignInScreen(
-                state = state,
-                onSignInClick = {
-                    viewModel.viewModelScope.launch {
-                        val signInIntentSender = googleAuthUiClient.signIn()
-                        launcher.launch(
-                            IntentSenderRequest.Builder(
-                                signInIntentSender ?: return@launch
-                            ).build()
-                        )
-                    }
-                }
+                googleAuthUiClient,
+                onSuccess = { navController.navigate("home") },
             )
         }
 

@@ -25,6 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -78,114 +81,124 @@ fun HomeScreen(
 
     val scope = rememberCoroutineScope()
 
-    Column(
-        verticalArrangement = Arrangement.SpaceBetween,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Section(
-            title = "Turnusy",
-            onButtonClick = { showBottomSheetTourForm = true },
-            buttonTitle = "Přidat",
-            modifier = Modifier
-                .padding(20.dp)
-                .weight(5.5f)
-        ) {
-            TourList(
-                tourList.listedTours,
-                userId,
-                onTourSelected = { id: String ->
-                    if (userId != null) {
-                        onTourClick(id, userId)
-                    }
-                },
-                onTourAccessDenied = { tourId: String ->
-                    showBottomSheetAccessDenied = true
-                    selectedTour = tourId
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = { data ->
+                    Snackbar(
+                        containerColor = MaterialTheme.colorScheme.surfaceTint,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        snackbarData = data
+                    )
                 }
             )
         }
-
-        MiddleDarkButton(
-            onClickButton = onLogoutClick
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier.padding(innerPadding),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Odhlásit se")
-        }
-    }
-
-    if (showBottomSheetAccessDenied) {
-        ModalBottomSheet(
-            onDismissRequest = {
-                scope.launch {
-                    sheetStateAccessDenied.hide()
-                }.invokeOnCompletion {
-                    if (!sheetStateAccessDenied.isVisible) {
-                        showBottomSheetAccessDenied = false
-                    }
-                }
-            },
-            sheetState = sheetStateAccessDenied
-        ) {
-            Column(
+            Section(
+                title = "Turnusy",
+                onButtonClick = { showBottomSheetTourForm = true },
+                buttonTitle = "Přidat",
                 modifier = Modifier
                     .padding(20.dp)
-                    .fillMaxWidth()
+                    .weight(5.5f)
             ) {
-                Text(
-                    text = "Chcete požádat o přijetí?",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-                Text(
-                    text = "Nejste členem tohoto turnusu. Pokud chcete vstoupit, musí být vaše žádost přijata",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-                TwoOptionButtons(
-                    onLeftClick = {
-                        scope.launch {
-                            sheetStateAccessDenied.hide()
-                        }.invokeOnCompletion {
-                            if (!sheetStateAccessDenied.isVisible) {
-                                showBottomSheetAccessDenied = false
-                            }
+                TourList(
+                    tourList.listedTours,
+                    userId,
+                    onTourSelected = { id: String ->
+                        if (userId != null) {
+                            onTourClick(id, userId)
                         }
                     },
-                    onLeftText = "Zrušit",
-                    onRightClick = {
-                        homeViewModel.sendApplication(selectedTour, userId)
-                        scope.launch {
-                            sheetStateAccessDenied.hide()
-                        }.invokeOnCompletion {
-                            if (!sheetStateAccessDenied.isVisible) {
-                                showBottomSheetAccessDenied = false
-                            }
-                        }
-                    },
-                    onRightText = "Poslat žádost"
+                    onTourAccessDenied = { tourId: String ->
+                        showBottomSheetAccessDenied = true
+                        selectedTour = tourId
+                    }
                 )
-                Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            MiddleDarkButton(
+                onClickButton = onLogoutClick
+            ) {
+                Text(text = "Odhlásit se")
             }
         }
-    }
 
-    if (showBottomSheetTourForm) {
-        ModalBottomSheet(
-            shape = MaterialTheme.shapes.small,
-            tonalElevation = 0.dp,
-            sheetState = sheetStateTourForm,
-            onDismissRequest = {
-                scope.launch {
-                    sheetStateTourForm.hide()
-                }.invokeOnCompletion {
-                    if (!sheetStateTourForm.isVisible) {
-                        showBottomSheetTourForm = false
+        if (showBottomSheetAccessDenied) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    scope.launch {
+                        sheetStateAccessDenied.hide()
+                    }.invokeOnCompletion {
+                        if (!sheetStateAccessDenied.isVisible) {
+                            showBottomSheetAccessDenied = false
+                        }
                     }
+                },
+                sheetState = sheetStateAccessDenied
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Chcete požádat o přijetí?",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Text(
+                        text = "Nejste členem tohoto turnusu. Pokud chcete vstoupit, musí být vaše žádost přijata",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    TwoOptionButtons(
+                        onLeftClick = {
+                            scope.launch {
+                                sheetStateAccessDenied.hide()
+                            }.invokeOnCompletion {
+                                if (!sheetStateAccessDenied.isVisible) {
+                                    showBottomSheetAccessDenied = false
+                                }
+                            }
+                        },
+                        onLeftText = "Zrušit",
+                        onRightClick = {
+                            homeViewModel.sendApplication(selectedTour, userId)
+                            scope.launch {
+                                sheetStateAccessDenied.hide()
+                            }.invokeOnCompletion {
+                                if (!sheetStateAccessDenied.isVisible) {
+                                    showBottomSheetAccessDenied = false
+                                }
+                            }
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Žádost úspěšně odeslána."
+                                )
+                            }
+                        },
+                        onRightText = "Poslat žádost"
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
-        ) {
-            TourForm(
-                userId,
-                onDismiss = {
+        }
+
+        if (showBottomSheetTourForm) {
+            ModalBottomSheet(
+                shape = MaterialTheme.shapes.small,
+                tonalElevation = 0.dp,
+                sheetState = sheetStateTourForm,
+                onDismissRequest = {
                     scope.launch {
                         sheetStateTourForm.hide()
                     }.invokeOnCompletion {
@@ -193,13 +206,26 @@ fun HomeScreen(
                             showBottomSheetTourForm = false
                         }
                     }
-                },
-                onCreate = { tour: Tour ->
-                    homeViewModel.createNewTour(
-                        tour
-                    )
                 }
-            )
+            ) {
+                TourForm(
+                    userId,
+                    onDismiss = {
+                        scope.launch {
+                            sheetStateTourForm.hide()
+                        }.invokeOnCompletion {
+                            if (!sheetStateTourForm.isVisible) {
+                                showBottomSheetTourForm = false
+                            }
+                        }
+                    },
+                    onCreate = { tour: Tour ->
+                        homeViewModel.createNewTour(
+                            tour
+                        )
+                    }
+                )
+            }
         }
     }
 }
@@ -322,6 +348,7 @@ fun TourList(
     ) {
         tourList?.forEach { tour ->
             val isMember = tour.members?.contains(userId)
+            val hasApplication = tour.applications?.contains(userId)
             if (tour.tourId != null) {
                 DesignedCard(
                     title = tour.title ?: "Nepojmenovaný turnus",
@@ -331,10 +358,10 @@ fun TourList(
                     endTime = tour.endDate,
                     timeInDayFormat = true,
                     enabled = isMember,
-                    button = if (isMember == true) "Otevřít" else "Požádat o přijetí",
+                    button = if (isMember == true) "Otevřít" else if (hasApplication == true) "Žádost odeslána" else "Požádat o přijetí",
                     onClickAction = {
                         if (isMember == true) { onTourSelected(tour.tourId) }
-                        else { onTourAccessDenied(tour.tourId) }
+                        else if (hasApplication == false) { onTourAccessDenied(tour.tourId) }
                     }
                 )
             }
