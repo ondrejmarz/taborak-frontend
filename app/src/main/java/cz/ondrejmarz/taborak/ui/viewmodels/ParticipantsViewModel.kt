@@ -23,12 +23,9 @@ class ParticipantsViewModel(private val tourId: String) : ViewModel() {
     private val _participants = MutableStateFlow(ParticipantsState())
     val participants: StateFlow<ParticipantsState> = _participants.asStateFlow()
 
-    init {
-        fetchParticipants()
-    }
-
     fun fetchParticipants() {
         viewModelScope.launch {
+            _participants.update { state -> state.copy( isLoading = true ) }
             ApiClient.fetchParticipants(tourId, { responseBody: String ->
                 _participants.update { participantsListState ->
                     participantsListState.copy(
@@ -38,6 +35,7 @@ class ParticipantsViewModel(private val tourId: String) : ViewModel() {
             }, {
                 println(it)
             })
+            _participants.update { state -> state.copy( isLoading = false ) }
         }
     }
 

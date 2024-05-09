@@ -13,12 +13,12 @@ import java.io.IOException
 
 object ApiClient {
 
-    private val urlPath = "https://taborak.onrender.com"
+    private const val urlPath = "https://taborak.onrender.com"
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun fetchTours(onSuccess: (String) -> Unit) {
-            val url = "$urlPath/tours"
-            RequestManagerOkHttp.makeGetRequest(url, onSuccess) { error -> println(error) }
+        val url = "$urlPath/tours"
+        RequestManagerOkHttp.makeGetRequest(url, onSuccess) { error -> println(error) }
     }
 
     suspend fun fetchTour(tourId: String, onSuccess: (String) -> Unit) {

@@ -46,7 +46,7 @@ fun TasksScreen(
             Section(title = "Vlastní úkoly") {
                 DesignedCard(
                     title = "Momentálně nemáš žádné vlastní úkoly",
-                    description = "Můžeš si vytvořit vlastní úkoly pomocí tlačítka VYTVOŘIT."
+                    description = "Tvorba úkolu bude funkční s příští aktualizací."
                 )
             }
         }

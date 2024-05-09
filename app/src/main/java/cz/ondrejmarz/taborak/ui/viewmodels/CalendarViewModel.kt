@@ -6,6 +6,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.common.eventbus.EventBus
 import cz.ondrejmarz.taborak.data.api.ApiClient
 import cz.ondrejmarz.taborak.data.models.Activity
 import cz.ondrejmarz.taborak.data.models.DayPlan
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -36,12 +38,12 @@ class CalendarViewModel(private val tourId: String) : ViewModel() {
     val calendar: StateFlow<CalendarState> = _calendar.asStateFlow()
 
     init {
-        fetchTour()
-        fetchCalendar(day.value)
+        fetchAll()
     }
 
-    private fun fetchTour() {
+    private fun fetchAll() {
         viewModelScope.launch {
+            _calendar.update { calendarState -> calendarState.copy( isLoading = true ) }
             ApiClient.fetchTour(tourId) { responseBody: String ->
                 val newTour = createTour(responseBody)
                 _tour.update {
@@ -51,19 +53,25 @@ class CalendarViewModel(private val tourId: String) : ViewModel() {
                     getClosestTourDate(newTour)
                 }
             }
+            fetchCalendar()
         }
     }
 
     fun daySelected(day: String) {
         viewModelScope.launch {
+            _calendar.update { calendarState -> calendarState.copy( isLoading = true ) }
             _day.update { day }
-            fetchCalendar(day)
+            _calendar.update { activityState ->
+                activityState.copy(
+                    dayProgram = null
+                )
+            }
         }
     }
 
-    fun fetchCalendar(day: String) {
+    fun fetchCalendar() {
         viewModelScope.launch {
-            ApiClient.fetchCalendar(tourId, day, { responseBody: String ->
+            ApiClient.fetchCalendar(tourId, day.value, { responseBody: String ->
                 _calendar.update { activityState ->
                     activityState.copy(
                         dayProgram = createDayPlan(responseBody)
@@ -72,27 +80,31 @@ class CalendarViewModel(private val tourId: String) : ViewModel() {
             }, {
                 _calendar.update { activityState ->
                     activityState.copy(
-                        dayProgram = DayPlan()
+                        dayProgram = null
                     )
                 }
             })
+            _calendar.update { calendarState -> calendarState.copy( isLoading = false ) }
         }
     }
 
-    fun createNewDayProgram(day: String, dayPlan: DayPlan) {
+    fun createNewDayProgram(dayPlan: DayPlan) {
         viewModelScope.launch {
+            _calendar.update { calendarState -> calendarState.copy( isLoading = true ) }
             ApiClient.createActivities(
                 tourId,
-                day,
+                day.value,
                 dayPlan,
-                onSuccess = { fetchCalendar(day) },
+                onSuccess = { fetchCalendar() },
                 onFailure = { e: IOException -> println(e.message) }
             )
         }
     }
 
-    fun saveActivity(day: String, activity: Activity) {
+    fun saveActivity(activity: Activity) {
         viewModelScope.launch {
+            _calendar.update { calendarState -> calendarState.copy( isLoading = true ) }
+
             val dayPlan: DayPlan = _calendar.value.dayProgram ?: return@launch
 
             if (activity.type == "Jídlo" || activity.type == "Milník") {
@@ -121,9 +133,9 @@ class CalendarViewModel(private val tourId: String) : ViewModel() {
 
             ApiClient.updateDayPlan(
                 tourId,
-                day,
+                day.value,
                 dayPlan,
-                onSuccess = { fetchCalendar(day) },
+                onSuccess = { fetchCalendar() },
                 onFailure = { e: IOException -> println(e.message) }
             )
         }

@@ -7,9 +7,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -18,6 +23,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,8 +54,10 @@ import cz.ondrejmarz.taborak.data.models.Activity
 import cz.ondrejmarz.taborak.data.util.convertTimePickerStateToStringDate
 import cz.ondrejmarz.taborak.data.util.formatDateStringToGivenFormatString
 import cz.ondrejmarz.taborak.data.util.formatDateStringToOutputTimeString
+import cz.ondrejmarz.taborak.ui.components.DesignedBottomSheet
 import cz.ondrejmarz.taborak.ui.viewmodels.CalendarViewModel
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
+import cz.ondrejmarz.taborak.ui.components.LoadingIcon
 import cz.ondrejmarz.taborak.ui.components.Section
 import cz.ondrejmarz.taborak.ui.components.TwoOptionButtons
 import cz.ondrejmarz.taborak.ui.viewmodels.factory.CalendarViewModelFactory
@@ -62,25 +72,25 @@ fun DayPlanScreen(
     calendarViewModel: CalendarViewModel = viewModel(factory = CalendarViewModelFactory(tourId)),
     navController: NavHostController
 ) {
-    day?.let { calendarViewModel.fetchCalendar(it) }
+    day?.let {
+        calendarViewModel.daySelected(day)
+        calendarViewModel.fetchCalendar()
+    }
 
     val calendar by calendarViewModel.calendar.collectAsState()
 
     var editMode by remember { mutableStateOf(false) }
     var showEdit by remember { mutableStateOf(false) }
-    var showDetail by remember { mutableStateOf(false) }
 
     val sheetStateEdit = rememberModalBottomSheetState()
-    val sheetStateDetail = rememberModalBottomSheetState()
 
-    val scopeEdit = rememberCoroutineScope()
-    val scopeDetail = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
     var selectedActivity by remember { mutableStateOf(Activity()) }
 
     val onClickAction = { activity: Activity ->
         selectedActivity = activity
-        if (editMode) { showEdit = true } else { showDetail = true }
+        showEdit = true
     }
 
     Scaffold(
@@ -94,7 +104,10 @@ fun DayPlanScreen(
                 },
                 actions = {
                     IconButton(onClick = { editMode = !editMode }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Upravit")
+                        if (editMode)
+                            Icon(Icons.Default.VisibilityOff, contentDescription = "Upravit")
+                        else
+                            Icon(Icons.Default.Visibility, contentDescription = "Upravit")
                     }
                 }
             )
@@ -102,112 +115,70 @@ fun DayPlanScreen(
         modifier = Modifier.fillMaxSize()
     ) { innerPadding ->
 
-        val activityList = calendar.dayProgram?.getActivityList?.sortedBy { it.startTime }
-        activityList?.forEach { activity ->
-            if (activity.visible == true || editMode == true) {
-                when (activity.type) {
-                    "Jídlo" -> DesignedCard(
-                        title = activity.name?: "Nepojmenovaná aktivita",
-                        description = activity.desc,
-                        startTime = activity.startTime,
-                        endTime = activity.endTime,
-                        timeInDayFormat = false,
-                        enabled = true,
-                        button = if (editMode) "Upravit aktivitu" else null,
-                        onClickAction = { onClickAction(activity) }
-                    )
-                    "Milník" -> DesignedCard(
-                        title = activity.name?: "Nepojmenovaná aktivita",
-                        startTime = activity.startTime,
-                        endTime = activity.endTime,
-                        timeInDayFormat = false,
-                        enabled = true,
-                        button = if (editMode) "Upravit aktivitu" else null,
-                        onClickAction = { onClickAction(activity) }
-                    )
-                    else -> DesignedCard(
-                        title = activity.name?: "Nepojmenovaná aktivita",
-                        topic = activity.type,
-                        //description = activity.desc,
-                        startTime = activity.startTime,
-                        endTime = activity.endTime,
-                        timeInDayFormat = false,
-                        enabled = true,
-                        button = if (editMode) "Upravit aktivitu" else null,
-                        onClickAction = { onClickAction(activity) }
-                    )
-                }
-            }
-        }
-
-        if (showDetail) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    scopeDetail.launch {
-                        sheetStateDetail.hide()
-                    }.invokeOnCompletion {
-                        if (!sheetStateDetail.isVisible) {
-                            showDetail = false
-                        }
-                    }
-                },
-                sheetState = sheetStateDetail
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    when (selectedActivity.type) {
-                        "Jídlo" -> Section(title = selectedActivity.name?: "Jídlo") {
-                            Column(
-                                modifier = Modifier
-                                    .padding(vertical = 20.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                Text(text = selectedActivity.desc?: "Neznámo")
-                                selectedActivity.startTime?.let { Text(text = ("Od: " + formatDateStringToOutputTimeString(it))) }
-                            }
-                        }
-
-                        "Milník" -> Section(title = selectedActivity.name?: "Aktivita") {
-                            Column(
-                                modifier = Modifier
-                                    .padding(vertical = 10.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                selectedActivity.desc?.let { Text(text = it) }
-                                selectedActivity.startTime?.let { Text(text = ("Od: " + formatDateStringToOutputTimeString(it))) }
-                            }
-                        }
-
-                        else -> Section(title = selectedActivity.type?: "Aktivita") {
-                            Column(
-                                modifier = Modifier
-                                    .padding(vertical = 10.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                Text(text = selectedActivity.name?: "Neznámo")
-                                Text(text = selectedActivity.desc?: "Bez popisku")
-                                selectedActivity.startTime?.let { Text(text = ("Od: " + formatDateStringToOutputTimeString(it))) }
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            when {
+                calendar.dayProgram != null -> {
+                    val activityList = calendar.dayProgram?.getActivityList?.sortedBy { it.startTime }
+                    activityList?.forEach { activity ->
+                        if (activity.visible == true || editMode) {
+                            when (activity.type) {
+                                "Jídlo" -> DesignedCard(
+                                    title = activity.name?: "Nepojmenovaná aktivita",
+                                    description = activity.desc,
+                                    startTime = activity.startTime,
+                                    endTime = activity.endTime,
+                                    timeInDayFormat = false,
+                                    enabled = true,
+                                    onClickAction = { onClickAction(activity) }
+                                )
+                                "Milník" -> DesignedCard(
+                                    title = activity.name?: "Nepojmenovaná aktivita",
+                                    startTime = activity.startTime,
+                                    endTime = activity.endTime,
+                                    timeInDayFormat = false,
+                                    enabled = true,
+                                    onClickAction = { onClickAction(activity) }
+                                )
+                                else -> DesignedCard(
+                                    title = activity.name?: "Nepojmenovaná aktivita",
+                                    topic = activity.type,
+                                    //description = activity.desc,
+                                    startTime = activity.startTime,
+                                    endTime = activity.endTime,
+                                    timeInDayFormat = false,
+                                    enabled = true,
+                                    onClickAction = { onClickAction(activity) }
+                                )
                             }
                         }
                     }
                 }
+
+                calendar.isLoading -> {
+                    LoadingIcon()
+                }
+
+                else -> navController.popBackStack()
             }
         }
 
         if (showEdit) {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    scopeEdit.launch {
+            DesignedBottomSheet(
+                state = sheetStateEdit,
+                onDismiss = {
+                    scope.launch {
                         sheetStateEdit.hide()
                     }.invokeOnCompletion {
                         if (!sheetStateEdit.isVisible) {
                             showEdit = false
                         }
                     }
-                },
-                sheetState = sheetStateEdit
+                }
             ) {
                 var activityName    by remember { mutableStateOf(selectedActivity.name) }
                 var activityDesc    by remember { mutableStateOf(selectedActivity.desc) }
@@ -220,7 +191,6 @@ fun DayPlanScreen(
 
                 Column(
                     modifier = Modifier
-                        .padding(vertical = 20.dp)
                         .verticalScroll(rememberScrollState())
                         .fillMaxWidth(),
                     verticalArrangement = Arrangement.Top,
@@ -228,6 +198,7 @@ fun DayPlanScreen(
                 ) {
                     when (selectedActivity.type) {
                         "Jídlo" -> Section(title = selectedActivity.name?: "Jídlo") {
+                            Spacer(modifier = Modifier.height(10.dp))
                             OutlinedTextField(
                                 value = activityDesc?: "",
                                 onValueChange = { text -> activityDesc = text },
@@ -237,6 +208,7 @@ fun DayPlanScreen(
                             )
                         }
                         "Milník" -> Section(title = selectedActivity.name?: "Aktivita") {
+                            Spacer(modifier = Modifier.height(10.dp))
                             OutlinedTextField(
                                 value = activityDesc?: "",
                                 onValueChange = { text -> activityDesc = text },
@@ -247,7 +219,7 @@ fun DayPlanScreen(
                             //Text(text = ("Od: " + formatDateStringToOutputTimeString(selectedActivity.startTime)))
                         }
                         else -> Section(title = selectedActivity.type?: "Aktivita") {
-
+                            Spacer(modifier = Modifier.height(10.dp))
                             OutlinedTextField(
                                 value = activityName?: "",
                                 onValueChange = { text -> activityName = text },
@@ -267,7 +239,9 @@ fun DayPlanScreen(
                         }
                     }
                     Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -275,16 +249,13 @@ fun DayPlanScreen(
                         Switch(checked = activityVisible == true, onCheckedChange = { isChecked ->
                             activityVisible = isChecked })
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                     TimePicker(state = startTimeState)
-
-
-                    Box(
-                        modifier = Modifier.padding(20.dp)
-                    ) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                         TwoOptionButtons(
                             onLeftClick = {
-                                scopeEdit.launch {
+                                scope.launch {
                                     sheetStateEdit.hide()
                                 }.invokeOnCompletion {
                                     if (!sheetStateEdit.isVisible) {
@@ -301,9 +272,9 @@ fun DayPlanScreen(
                                         startTime = convertTimePickerStateToStringDate(startTimeState, selectedActivity.startTime),
                                         visible = activityVisible
                                     )
-                                    calendarViewModel.saveActivity(day, editedActivity)
+                                    calendarViewModel.saveActivity(editedActivity)
                                 }
-                                scopeEdit.launch {
+                                scope.launch {
                                     sheetStateEdit.hide()
                                 }.invokeOnCompletion {
                                     if (!sheetStateEdit.isVisible) {
@@ -314,6 +285,7 @@ fun DayPlanScreen(
                             onRightText = "Uložit"
                         )
                     }
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }

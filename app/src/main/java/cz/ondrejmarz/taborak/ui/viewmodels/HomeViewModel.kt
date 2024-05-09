@@ -21,11 +21,15 @@ import java.io.IOException
 @RequiresApi(Build.VERSION_CODES.O)
 class HomeViewModel : ViewModel() {
 
+    private val _isCreatedSuccessfully = MutableStateFlow("")
+    val isCreatedSuccessfully: StateFlow<String> = _isCreatedSuccessfully.asStateFlow()
+
     private val _tours = MutableStateFlow(TourListState())
     val tours: StateFlow<TourListState> = _tours.asStateFlow()
 
     fun fetchTours() {
         viewModelScope.launch {
+            _tours.update { state -> state.copy( isLoading = true ) }
             ApiClient.fetchTours { responseBody: String ->
                 _tours.update { tourListState ->
                     tourListState.copy(
@@ -33,18 +37,25 @@ class HomeViewModel : ViewModel() {
                     )
                 }
             }
+            _tours.update { state -> state.copy( isLoading = false ) }
         }
     }
 
     fun createNewTour(newTour: Tour) {
         viewModelScope.launch {
+            _isCreatedSuccessfully.update { "creating" }
             ApiClient.createTour(
                 newTour,
-                onSuccess = {  },
-                onFailure = { e: IOException -> println(e.message) }
+                onSuccess = {
+                    _isCreatedSuccessfully.update { "created" }
+                    fetchTours()
+                },
+                onFailure = { e: IOException ->
+                    println(e.message)
+                    _isCreatedSuccessfully.update { "error" }
+                }
             )
         }
-        fetchTours()
     }
 
     fun sendApplication(tourId: String, userId: String?) {
@@ -52,8 +63,8 @@ class HomeViewModel : ViewModel() {
             userId?.let {
                 ApiClient.addTourApplication(tourId, it) { }
             }
+            fetchTours()
         }
-        fetchTours()
     }
 
     private fun createTourList(responseBody: String): List<Tour> {
@@ -63,5 +74,9 @@ class HomeViewModel : ViewModel() {
             e.printStackTrace()
             emptyList()
         }
+    }
+
+    fun resetTourCreationState() {
+        _isCreatedSuccessfully.update { "default" }
     }
 }

@@ -63,11 +63,10 @@ fun SignInScreen(
             snackbarHostState.showSnackbar(
                 message = "Úspěšné přihlášení"
             )
-
+            onSuccess()
             googleAuthUiClient.setSignInUserToken()?.let {
                 AuthTokenManager.saveAuthToken(it) }
             viewModel.checkIfUserIsInDatabase(googleAuthUiClient.getSignInUser())
-            onSuccess()
             viewModel.resetState()
         }
     }

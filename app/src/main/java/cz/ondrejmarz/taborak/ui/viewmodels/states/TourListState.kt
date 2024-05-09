@@ -3,5 +3,6 @@ package cz.ondrejmarz.taborak.ui.viewmodels.states
 import cz.ondrejmarz.taborak.data.models.Tour
 
 data class TourListState(
-    val listedTours: List<Tour> = emptyList()
+    val listedTours: List<Tour>? = null,
+    val isLoading: Boolean = false
 )

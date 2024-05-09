@@ -10,12 +10,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePickerFormatter
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DateRangePickerState
@@ -42,12 +47,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cz.ondrejmarz.taborak.data.models.Tour
 import cz.ondrejmarz.taborak.data.util.formatMillisToIsoDateTime
 import cz.ondrejmarz.taborak.data.util.formatMillisToIsoDay
 import cz.ondrejmarz.taborak.data.util.fromDayToReadableDay
 import cz.ondrejmarz.taborak.data.util.toMillis
+import cz.ondrejmarz.taborak.ui.components.DesignedBottomSheet
 import cz.ondrejmarz.taborak.ui.viewmodels.HomeViewModel
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
 import cz.ondrejmarz.taborak.ui.components.MiddleDarkButton
@@ -70,13 +77,14 @@ fun HomeScreen(
         homeViewModel.fetchTours()
     }
 
+    val isCreatedSuccessfully by homeViewModel.isCreatedSuccessfully.collectAsState()
     val tourList by homeViewModel.tours.collectAsState()
 
     val sheetStateAccessDenied = rememberModalBottomSheetState()
     var showBottomSheetAccessDenied by remember { mutableStateOf(false) }
     var selectedTour by remember { mutableStateOf("") }
 
-    val sheetStateTourForm = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetStateTourForm = rememberModalBottomSheetState(true)
     var showBottomSheetTourForm by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
@@ -98,31 +106,51 @@ fun HomeScreen(
         }
     ) { innerPadding ->
         Column(
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(innerPadding).fillMaxSize(),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Section(
                 title = "Turnusy",
-                onButtonClick = { showBottomSheetTourForm = true },
+                onButtonClick = {
+                    homeViewModel.resetTourCreationState()
+                    showBottomSheetTourForm = true
+                },
                 buttonTitle = "Přidat",
                 modifier = Modifier
                     .padding(20.dp)
-                    .weight(5.5f)
             ) {
-                TourList(
-                    tourList.listedTours,
-                    userId,
-                    onTourSelected = { id: String ->
-                        if (userId != null) {
-                            onTourClick(id, userId)
-                        }
-                    },
-                    onTourAccessDenied = { tourId: String ->
-                        showBottomSheetAccessDenied = true
-                        selectedTour = tourId
+                when {
+                    tourList.listedTours != null -> {
+                        TourList(
+                            tourList.listedTours,
+                            userId,
+                            onTourSelected = { id: String ->
+                                if (userId != null) {
+                                    onTourClick(id, userId)
+                                }
+                            },
+                            onTourAccessDenied = { tourId: String ->
+                                showBottomSheetAccessDenied = true
+                                selectedTour = tourId
+                            }
+                        )
                     }
-                )
+                    tourList.isLoading -> {
+                        Spacer(modifier = Modifier.height(60.dp))
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
+                    else -> {
+
+                    }
+                }
             }
 
             MiddleDarkButton(
@@ -133,8 +161,9 @@ fun HomeScreen(
         }
 
         if (showBottomSheetAccessDenied) {
-            ModalBottomSheet(
-                onDismissRequest = {
+            DesignedBottomSheet(
+                state = sheetStateAccessDenied,
+                onDismiss = {
                     scope.launch {
                         sheetStateAccessDenied.hide()
                     }.invokeOnCompletion {
@@ -142,12 +171,11 @@ fun HomeScreen(
                             showBottomSheetAccessDenied = false
                         }
                     }
-                },
-                sheetState = sheetStateAccessDenied
+                }
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(20.dp)
+                        .padding(horizontal = 20.dp)
                         .fillMaxWidth()
                 ) {
                     Text(
@@ -188,17 +216,15 @@ fun HomeScreen(
                         },
                         onRightText = "Poslat žádost"
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
 
         if (showBottomSheetTourForm) {
-            ModalBottomSheet(
-                shape = MaterialTheme.shapes.small,
-                tonalElevation = 0.dp,
-                sheetState = sheetStateTourForm,
-                onDismissRequest = {
+            DesignedBottomSheet(
+                state = sheetStateTourForm,
+                onDismiss = {
                     scope.launch {
                         sheetStateTourForm.hide()
                     }.invokeOnCompletion {
@@ -208,9 +234,54 @@ fun HomeScreen(
                     }
                 }
             ) {
-                TourForm(
-                    userId,
-                    onDismiss = {
+                when(isCreatedSuccessfully) {
+                    "creating" -> {
+                        Spacer(modifier = Modifier.height(60.dp))
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+                    }
+
+                    "default" -> {
+                        TourForm(
+                            userId,
+                            onDismiss = {
+                                scope.launch {
+                                    sheetStateTourForm.hide()
+                                }.invokeOnCompletion {
+                                    if (!sheetStateTourForm.isVisible) {
+                                        showBottomSheetTourForm = false
+                                    }
+                                }
+                            },
+                            onCreate = { tour: Tour ->
+                                homeViewModel.createNewTour(
+                                    tour
+                                )
+                            }
+                        )
+                    }
+
+                    "error" -> {
+                        Section(title = "Nastala chyba", buttonTitle = "Zavřít", onButtonClick = {
+                            scope.launch {
+                                sheetStateTourForm.hide()
+                            }.invokeOnCompletion {
+                                if (!sheetStateTourForm.isVisible) {
+                                    showBottomSheetTourForm = false
+                                }
+                            }
+                        }) {
+
+                        }
+                    }
+
+                    else -> {
                         scope.launch {
                             sheetStateTourForm.hide()
                         }.invokeOnCompletion {
@@ -218,13 +289,8 @@ fun HomeScreen(
                                 showBottomSheetTourForm = false
                             }
                         }
-                    },
-                    onCreate = { tour: Tour ->
-                        homeViewModel.createNewTour(
-                            tour
-                        )
                     }
-                )
+                }
             }
         }
     }
@@ -246,91 +312,86 @@ fun TourForm(
             initialSelectedStartDateMillis = dateTime.toMillis(),
             initialDisplayedMonthMillis = null,
             initialSelectedEndDateMillis = dateTime.plusDays(11).toMillis(),
-            initialDisplayMode = DisplayMode.Picker
+            initialDisplayMode = DisplayMode.Input
         )
     }
     var title by remember { mutableStateOf("") }
     var topic by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
-    Scaffold { innerPadding ->
-        Column(
+    Column(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text(
+            text = "Tvorba turnusu",
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = { Text("Název") },
             modifier = Modifier
-                .padding(innerPadding)
-                .padding(20.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            Text(
-                text = "Tvorba turnusu",
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Název") },
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            OutlinedTextField(
-                value = topic,
-                onValueChange = { topic = it },
-                label = { Text("Téma") },
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Popis") },
-                modifier = Modifier
-                    .fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            DateRangePicker(
-                modifier = Modifier.height(480.dp),
-                state = dateRangePickerState,
-                title = {
-                    Box(modifier = Modifier.padding(start = 20.dp, top = 20.dp)) {
-                        Text(text = "Zvolte datum")
-                    }
-                },
-                headline = {
-                    Box(modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 10.dp)) {
-                        Text(text = "${formatMillisToIsoDay(dateRangePickerState.selectedStartDateMillis).fromDayToReadableDay()} – ${formatMillisToIsoDay(dateRangePickerState.selectedEndDateMillis).fromDayToReadableDay()}", style = MaterialTheme.typography.titleLarge)
-                    }
-                },
-                showModeToggle = false,
+                .fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        OutlinedTextField(
+            value = topic,
+            onValueChange = { topic = it },
+            label = { Text("Téma") },
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Popis") },
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        DateRangePicker(
+            state = dateRangePickerState,
+            title = {
+                Box(modifier = Modifier.padding(start = 20.dp, top = 20.dp)) {
+                    Text(text = "Zvolte datum")
+                }
+            },
+            headline = {
+                Box(modifier = Modifier.padding(start = 20.dp, top = 20.dp, bottom = 10.dp)) {
+                    Text(text = "${formatMillisToIsoDay(dateRangePickerState.selectedStartDateMillis).fromDayToReadableDay()} – ${formatMillisToIsoDay(dateRangePickerState.selectedEndDateMillis).fromDayToReadableDay()}", style = MaterialTheme.typography.titleLarge)
+                }
+            },
+            showModeToggle = false,
 
-                )
-            Spacer(modifier = Modifier.height(20.dp))
-            TwoOptionButtons(
-                onLeftClick = onDismiss,
-                onLeftText = "Zrušit",
-                onRightClick = {
-                    if (title != "" && userId != null) {
-                        onCreate(
-                            Tour(
-                                title = title,
-                                description = description,
-                                topic = topic,
-                                endDate = formatMillisToIsoDateTime(dateRangePickerState.selectedEndDateMillis?: 0),
-                                startDate = formatMillisToIsoDateTime(dateRangePickerState.selectedStartDateMillis?: 0),
-                                members = listOf(userId),
-                                applications = null,
-                                groups = null,
-                                dailyPrograms = null
-                            )
-                        )
-                    }
-                    onDismiss()
-                },
-                onRightText = "Vytvořit"
             )
-            Spacer(modifier = Modifier.height(20.dp))
-        }
+        Spacer(modifier = Modifier.height(20.dp))
+        TwoOptionButtons(
+            onLeftClick = onDismiss,
+            onLeftText = "Zrušit",
+            onRightClick = {
+                if (title != "" && userId != null) {
+                    onCreate(
+                        Tour(
+                            title = title,
+                            description = description,
+                            topic = topic,
+                            endDate = formatMillisToIsoDateTime(dateRangePickerState.selectedEndDateMillis?: 0),
+                            startDate = formatMillisToIsoDateTime(dateRangePickerState.selectedStartDateMillis?: 0),
+                            members = listOf(userId),
+                            applications = null,
+                            groups = null,
+                            dailyPrograms = null
+                        )
+                    )
+                }
+            },
+            onRightText = "Vytvořit"
+        )
+        Spacer(modifier = Modifier.height(20.dp))
     }
 }
 

@@ -16,13 +16,6 @@ interface AppDestination {
     val name: String
     val route: String
 }
-
-object Loading : AppDestination {
-    override val icon = Icons.Default.HourglassTop
-    override val name = "Načítání"
-    override val route = "loading"
-}
-
 object SignIn : AppDestination {
     override val icon = Icons.AutoMirrored.Filled.Login
     override val name = "Přihlášení"
@@ -34,10 +27,10 @@ object Home : AppDestination {
     override val route = "home"
 }
 
-object Tour : AppDestination {
+object Members : AppDestination {
     override val icon = Icons.Filled.People
-    override val name = "Turnus"
-    override val route = "tour"
+    override val name = "Členové"
+    override val route = "members"
 }
 
 object Participants : AppDestination {
@@ -65,4 +58,4 @@ object Settings : AppDestination {
 }
 
 // Screens to be displayed in the bottom tab row
-val appTabRowScreens = listOf(Tour, Participants, Calendar, Tasks, Settings)
+val appTabRowScreens = listOf(Members, Participants, Calendar, Tasks, Settings)

@@ -6,6 +6,9 @@ import cz.ondrejmarz.taborak.auth.UserRole
 data class UserState(
     // list of users that are part of the tour
     val members: List<UserData> = emptyList(),
+    val isLoadingMembers: Boolean = false,
+
     // list of users that are applying to join the tour
-    val application: List<UserData> = emptyList()
+    val applications: List<UserData> = emptyList(),
+    val isLoadingApplications: Boolean = false
 )

@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,7 @@ import cz.ondrejmarz.taborak.data.models.Participant
 import cz.ondrejmarz.taborak.ui.viewmodels.ParticipantsViewModel
 import cz.ondrejmarz.taborak.ui.components.BottomNavBar
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
+import cz.ondrejmarz.taborak.ui.components.LoadingIcon
 import cz.ondrejmarz.taborak.ui.components.Section
 import cz.ondrejmarz.taborak.ui.viewmodels.factory.ParticipantsViewModelFactory
 
@@ -56,6 +58,10 @@ fun ParticipantsScreen(
     var editMode by remember { mutableStateOf(false) }
     var selectedParticipants by remember { mutableStateOf(emptyList<Participant>()) }
 
+    LaunchedEffect(key1 = true) {
+        participantsViewModel.fetchParticipants()
+    }
+
     Scaffold(
         bottomBar = {
             BottomNavBar(
@@ -69,98 +75,108 @@ fun ParticipantsScreen(
         }
     ) { innerPadding ->
 
-        if (participants.groupList?.isEmpty() == true) {
-
-            Column(modifier = Modifier
-                .padding(innerPadding),
-                verticalArrangement = Arrangement.SpaceBetween,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Section(
-                    title = "Účastníci",
-                    onButtonClick = {
-                        navController.navigate("participants_tutorial/$tourId")
-                    },
-                    buttonTitle = "Nahrát"
-                ) {
-                    DesignedCard(
-                        title = "Turnus momentálně nemá žádné účastníky",
-                        description = "Seznam účastníků můžete nahrát pomocí tlačítka výše."
-                    )
-                }
-                Spacer(modifier = Modifier.height(60.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.children_pana),
-                    contentDescription = null
-                )
-            }
-        }
-        else {
-            Section(
-                title = "Účastníci",
-                onButtonClick = { editMode = !editMode },
-                buttonTitle = "Rozřadit"
-            ) {
+        when {
+            !participants.groupList.isNullOrEmpty() -> {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(ScrollState(0)),
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    participants.groupList?.forEach { group ->
-                        GroupCard(group, editMode) { selected ->
-                            selectedParticipants = selected
-                        }
-                        Spacer(modifier = Modifier.height(20.dp))
-                    }
-                    if (editMode) {
+                    Section(
+                        title = "Účastníci",
+                        onButtonClick = { editMode = !editMode },
+                        buttonTitle = "Rozřadit"
+                    ) {
                         Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Top
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(ScrollState(0)),
+                            verticalArrangement = Arrangement.Top,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Row {
-                                Button(onClick = {
-                                   participantsViewModel.assignNewParticipants(1, selectedParticipants)
-                                }, shape = MaterialTheme.shapes.small) {
-                                    Text(text = "Oddíl 1")
+                            participants.groupList?.forEach { group ->
+                                GroupCard(group, editMode) { selected ->
+                                    selectedParticipants = selected
                                 }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Button(onClick = {
-                                    participantsViewModel.assignNewParticipants(2, selectedParticipants)
-                                }, shape = MaterialTheme.shapes.small) {
-                                    Text(text = "Oddíl 2")
-                                }
+                                Spacer(modifier = Modifier.height(20.dp))
                             }
-                            Row {
-                                Button(onClick = {
-                                    participantsViewModel.assignNewParticipants(3, selectedParticipants)
-                                }, shape = MaterialTheme.shapes.small) {
-                                    Text(text = "Oddíl 3")
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Button(onClick = {
-                                    participantsViewModel.assignNewParticipants(4, selectedParticipants)
-                                }, shape = MaterialTheme.shapes.small) {
-                                    Text(text = "Oddíl 4")
-                                }
-                            }
-                            Row {
-                                Button(onClick = {
-                                    participantsViewModel.assignNewParticipants(5, selectedParticipants)
-                                }, shape = MaterialTheme.shapes.small) {
-                                    Text(text = "Oddíl 5")
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Button(onClick = {
-                                    participantsViewModel.assignNewParticipants(6, selectedParticipants)
-                                }, shape = MaterialTheme.shapes.small) {
-                                    Text(text = "Oddíl 6")
+                            if (editMode) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Top
+                                ) {
+                                    Row {
+                                        Button(onClick = {
+                                            participantsViewModel.assignNewParticipants(1, selectedParticipants)
+                                        }, shape = MaterialTheme.shapes.small) {
+                                            Text(text = "Oddíl 1")
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Button(onClick = {
+                                            participantsViewModel.assignNewParticipants(2, selectedParticipants)
+                                        }, shape = MaterialTheme.shapes.small) {
+                                            Text(text = "Oddíl 2")
+                                        }
+                                    }
+                                    Row {
+                                        Button(onClick = {
+                                            participantsViewModel.assignNewParticipants(3, selectedParticipants)
+                                        }, shape = MaterialTheme.shapes.small) {
+                                            Text(text = "Oddíl 3")
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Button(onClick = {
+                                            participantsViewModel.assignNewParticipants(4, selectedParticipants)
+                                        }, shape = MaterialTheme.shapes.small) {
+                                            Text(text = "Oddíl 4")
+                                        }
+                                    }
+                                    Row {
+                                        Button(onClick = {
+                                            participantsViewModel.assignNewParticipants(5, selectedParticipants)
+                                        }, shape = MaterialTheme.shapes.small) {
+                                            Text(text = "Oddíl 5")
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Button(onClick = {
+                                            participantsViewModel.assignNewParticipants(6, selectedParticipants)
+                                        }, shape = MaterialTheme.shapes.small) {
+                                            Text(text = "Oddíl 6")
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
+                }
+            }
+            participants.isLoading -> {
+                LoadingIcon()
+            }
+            else -> {
+                Column(modifier = Modifier
+                    .padding(innerPadding),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Section(
+                        title = "Účastníci",
+                        onButtonClick = {
+                            navController.navigate("participants_tutorial/$tourId")
+                        },
+                        buttonTitle = "Nahrát"
+                    ) {
+                        DesignedCard(
+                            title = "Turnus momentálně nemá žádné účastníky",
+                            description = "Seznam účastníků můžete nahrát pomocí tlačítka výše."
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(60.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.children_pana),
+                        contentDescription = null
+                    )
                 }
             }
         }

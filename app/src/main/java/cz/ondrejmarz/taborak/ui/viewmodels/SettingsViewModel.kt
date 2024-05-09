@@ -9,12 +9,14 @@ import androidx.lifecycle.viewModelScope
 import cz.ondrejmarz.taborak.auth.UserData
 import cz.ondrejmarz.taborak.auth.UserRole
 import cz.ondrejmarz.taborak.data.api.ApiClient
+import cz.ondrejmarz.taborak.data.models.Tour
 import cz.ondrejmarz.taborak.ui.viewmodels.states.UserState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 
@@ -24,66 +26,25 @@ class SettingsViewModel(
     private val userId: String
 ) : ViewModel() {
 
+    private val _tour = MutableStateFlow(Tour())
+    val tour: StateFlow<Tour> = _tour.asStateFlow()
+
     private val _role = MutableStateFlow(UserRole.ERROR)
     val role: StateFlow<UserRole> = _role.asStateFlow()
 
-    private val _users = MutableStateFlow(UserState())
-    val users: StateFlow<UserState> = _users.asStateFlow()
-
     init {
-        fetchAllUsersFromTour()
+        fetchTour()
         loadTourUserRole()
     }
 
-    private fun fetchAllUsersFromTour() {
+    private fun fetchTour() {
         viewModelScope.launch {
-            ApiClient.fetchAllMembers(tourId) { responseBody: String ->
-                _users.update { userState ->
-                    userState.copy(
-                        members = createUserList(responseBody)
-                    )
+            ApiClient.fetchTour(tourId) { responseBody: String ->
+                val newTour = createTour(responseBody)
+                _tour.update {
+                    newTour
                 }
             }
-        }
-
-        viewModelScope.launch {
-            ApiClient.fetchAllApplications(tourId) { responseBody: String ->
-                _users.update { userState ->
-                    userState.copy(
-                        application = createUserList(responseBody)
-                    )
-                }
-            }
-        }
-    }
-
-    fun acceptApplication(userId: String) {
-        viewModelScope.launch {
-            ApiClient.addTourMember(tourId, userId) { fetchAllUsersFromTour() }
-        }
-    }
-
-    fun deleteMember(userId: String) {
-        viewModelScope.launch {
-            ApiClient.deleteTourMember(tourId, userId) { fetchAllUsersFromTour() }
-        }
-    }
-
-    fun deleteApplication(tourId: String, userId: String) {
-        viewModelScope.launch {
-            ApiClient.deleteTourApplication(tourId, userId) { fetchAllUsersFromTour() }
-        }
-    }
-
-    fun setTourRole(userId: String, role: UserRole) {
-        viewModelScope.launch {
-            ApiClient.setTourRole(tourId, userId, role.role) {
-                fetchAllUsersFromTour()
-            }
-        }.invokeOnCompletion {
-            // when user changed own role
-            if (this.userId == userId)
-                loadTourUserRole()
         }
     }
 
@@ -98,7 +59,7 @@ class SettingsViewModel(
     }
 
     fun deleteTour() {
-        viewModelScope.launch {
+        runBlocking {
             ApiClient.deleteTour(
                 tourId,
                 onSuccess = {  },
@@ -107,20 +68,12 @@ class SettingsViewModel(
         }
     }
 
-    private fun createUserList(responseBody: String): List<UserData> {
+    private fun createTour(responseBody: String): Tour {
         return try {
             Json.decodeFromString(responseBody)
         } catch (e: SerializationException) {
             e.printStackTrace()
-            emptyList()
+            Tour()
         }
-    }
-
-    fun isLast(role: UserRole): Boolean {
-        users.value.members.forEach { user ->
-            if (user.userId != userId && user.role == role)
-                return false
-        }
-        return true
     }
 }

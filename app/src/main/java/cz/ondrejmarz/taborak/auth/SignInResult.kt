@@ -18,8 +18,6 @@ data class UserData(
 
 @Serializable
 enum class UserRole(val role: String) {
-    @SerialName("admin")
-    ADMIN("admin"),
     @SerialName("major")
     MAJOR("major"),
     @SerialName("minor")
@@ -34,7 +32,6 @@ enum class UserRole(val role: String) {
     companion object {
         fun fromString(role: String): UserRole {
             return when (role) {
-                "admin" -> ADMIN
                 "major" -> MAJOR
                 "minor" -> MINOR
                 "troop" -> TROOP

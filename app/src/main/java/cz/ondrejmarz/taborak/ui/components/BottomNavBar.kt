@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
@@ -42,13 +45,15 @@ fun BottomNavBar(
     onItemSelected: (String) -> Unit,
     currentScreen: String
 ) {
+    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+
     Surface(
         Modifier.fillMaxWidth()
     ) {
         Row(
             Modifier
                 .selectableGroup()
-                .padding(vertical = 3.dp),
+                .padding(bottom = bottomPadding),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -57,7 +62,8 @@ fun BottomNavBar(
                     text = screen.route,
                     icon = screen.icon,
                     onSelected = {
-                        onItemSelected( screen.route + "/" + tourId )
+                        if (currentScreen != screen.name)
+                            onItemSelected( screen.route + "/" + tourId )
                     },
                     selected = currentScreen == screen.name
                 )

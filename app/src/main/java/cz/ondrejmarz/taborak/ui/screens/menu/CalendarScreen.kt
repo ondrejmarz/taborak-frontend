@@ -8,13 +8,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
@@ -22,35 +29,51 @@ import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import cz.ondrejmarz.taborak.R
 import cz.ondrejmarz.taborak.appTabRowScreens
 import cz.ondrejmarz.taborak.data.models.Activity
+import cz.ondrejmarz.taborak.data.models.DayPlan
+import cz.ondrejmarz.taborak.data.models.Tour
+import cz.ondrejmarz.taborak.data.util.convertToTimestamp
 import cz.ondrejmarz.taborak.data.util.formatMillisToIsoDay
 import cz.ondrejmarz.taborak.data.util.fromDayToMillis
 import cz.ondrejmarz.taborak.data.util.fromDayToReadableDay
 import cz.ondrejmarz.taborak.data.util.getCurrentDate
 import cz.ondrejmarz.taborak.ui.viewmodels.CalendarViewModel
 import cz.ondrejmarz.taborak.ui.components.BottomNavBar
+import cz.ondrejmarz.taborak.ui.components.DesignedBottomSheet
 import cz.ondrejmarz.taborak.ui.components.DesignedCard
+import cz.ondrejmarz.taborak.ui.components.LoadingIcon
 import cz.ondrejmarz.taborak.ui.components.Section
 import cz.ondrejmarz.taborak.ui.components.TwoOptionButtons
+import cz.ondrejmarz.taborak.ui.screens.TourForm
 import cz.ondrejmarz.taborak.ui.viewmodels.factory.CalendarViewModelFactory
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -71,6 +94,8 @@ fun CalendarScreen(
     val day by calendarViewModel.day.collectAsState()
 
     var showSelectDayDialog by remember { mutableStateOf(false) }
+    var showBottomSheetDayPlanForm by remember { mutableStateOf(false) }
+    val sheetStateDayPlanForm = rememberModalBottomSheetState(true)
 
     val datePickerState by remember(tour) {
         val startDate = tour.startDate?.let { LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")) }
@@ -99,8 +124,12 @@ fun CalendarScreen(
 
     val calendar by calendarViewModel.calendar.collectAsState()
 
+    val scope = rememberCoroutineScope()
+
     val activityCurrent = findClosestActivity(calendar.dayProgram?.getActivityList)
     //val activityNext = findNextActivity(calendar.dayProgram?.getActivityList)
+
+
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -139,64 +168,70 @@ fun CalendarScreen(
                 Text(text = "Vybraný den: " + day.fromDayToReadableDay())
             }
 
-            if (calendar.dayProgram?.dayId != null) {
-                // Calendar view 1)
-                if (day == getCurrentDate() && activityCurrent != null) {
-                    Section(
-                        title = "Právě probíhá",
-                        onButtonClick = { navController.navigate("daily_plan/$tourId/$day") },
-                        buttonTitle = "Zobrazit vše"
-                    ) {
-                        DesignedCard(
-                            title = activityCurrent.name?: "Nepojmenovaná aktivita",
-                            topic = if (activityCurrent.type != "Jídlo" && activityCurrent.type != "Milník") activityCurrent.type else null,
-                            description = activityCurrent.desc,
-                            startTime = activityCurrent.startTime,
-                            endTime = activityCurrent.endTime,
-                            timeInDayFormat = false
-                        )
-                    }
-                }
-                // Calendar view 2)
-                else {
-                    Section(
-                        title = "Denní plán",
-                        onButtonClick = { navController.navigate("daily_plan/$tourId/$day") },
-                        buttonTitle = "Zobrazit vše"
-                    ) {
-                        ActivityList(
-                            listOf(
-                                calendar.dayProgram?.programMorning,
-                                calendar.dayProgram?.programAfternoon,
-                                calendar.dayProgram?.programEvening,
-                                calendar.dayProgram?.programNight
+            when {
+                calendar.dayProgram != null -> {
+                    if (day == getCurrentDate() && activityCurrent != null) {
+                        Section(
+                            title = "Právě probíhá",
+                            onButtonClick = { navController.navigate("daily_plan/$tourId/$day") },
+                            buttonTitle = "Zobrazit vše"
+                        ) {
+                            DesignedCard(
+                                title = activityCurrent.name?: "Nepojmenovaná aktivita",
+                                topic = if (activityCurrent.type != "Jídlo" && activityCurrent.type != "Milník") activityCurrent.type else null,
+                                description = activityCurrent.desc,
+                                startTime = activityCurrent.startTime,
+                                endTime = activityCurrent.endTime,
+                                timeInDayFormat = false
                             )
-                        )
+                        }
+                    }
+                    else {
+                        Section(
+                            title = "Denní plán",
+                            onButtonClick = { navController.navigate("daily_plan/$tourId/$day") },
+                            buttonTitle = "Zobrazit vše"
+                        ) {
+                            ActivityList(
+                                listOf(
+                                    calendar.dayProgram?.programMorning,
+                                    calendar.dayProgram?.programAfternoon,
+                                    calendar.dayProgram?.programEvening,
+                                    calendar.dayProgram?.programNight
+                                )
+                            )
+                        }
                     }
                 }
-            }
-            // Calendar view 3)
-            else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Section(
-                        title = "Denní plán",
-                        onButtonClick = { navController.navigate("daily_plan_create/$tourId/$day") },
-                        buttonTitle = "Vytvořit"
+
+                calendar.isLoading -> {
+                    LoadingIcon()
+                }
+
+                else -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        DesignedCard(
-                            title = "Denní plán není vytvořený",
-                            description = "Můžete požádat hlavní vedoucího o vytvoření denního plánu"
+                        Section(
+                            title = "Denní plán",
+                            onButtonClick = { showBottomSheetDayPlanForm = true
+                                //navController.navigate("daily_plan_create/$tourId/$day")
+                            },
+                            buttonTitle = "Vytvořit"
+                        ) {
+                            DesignedCard(
+                                title = "Denní plán není vytvořený",
+                                description = "Můžete požádat hlavní vedoucího o vytvoření denního plánu"
+                            )
+                        }
+                        Image(
+                            painter = painterResource(id = R.drawable.calendar_pana),
+                            contentDescription = null
                         )
                     }
-                    Image(
-                        painter = painterResource(id = R.drawable.calendar_pana),
-                        contentDescription = null
-                    )
                 }
             }
 
@@ -210,6 +245,38 @@ fun CalendarScreen(
                         )
                     }
                 }
+            }
+        }
+
+        if (showBottomSheetDayPlanForm) {
+            DesignedBottomSheet(
+                state = sheetStateDayPlanForm,
+                onDismiss = {
+                    scope.launch {
+                        sheetStateDayPlanForm.hide()
+                    }.invokeOnCompletion {
+                        if (!sheetStateDayPlanForm.isVisible) {
+                            showBottomSheetDayPlanForm = false
+                        }
+                    }
+                }
+            ) {
+                DayPlanForm(
+                    onDismiss = {
+                        scope.launch {
+                            sheetStateDayPlanForm.hide()
+                        }.invokeOnCompletion {
+                            if (!sheetStateDayPlanForm.isVisible) {
+                                showBottomSheetDayPlanForm = false
+                            }
+                        }
+                    },
+                    onCreate = { dayPlan: DayPlan ->
+                        calendarViewModel.createNewDayProgram(
+                            dayPlan
+                        )
+                    }
+                )
             }
         }
 
@@ -243,6 +310,7 @@ fun CalendarScreen(
                         shape = MaterialTheme.shapes.small,
                         onClick = {
                             calendarViewModel.daySelected(formatMillisToIsoDay(datePickerState.selectedDateMillis))
+                            calendarViewModel.fetchCalendar()
                             showSelectDayDialog = false
                         }
                     ) {
@@ -269,16 +337,169 @@ fun CalendarScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DayPlanForm(onDismiss: () -> Unit, onCreate: (DayPlan) -> Unit) {
+
+    var currentFieldIndex   by remember { mutableStateOf(0) }
+
+    val fields = listOf("Budíček", "Rozcvička", "Dopolední činnost", "Odpolední činnost",
+        "Podvečerní činnost", "Večerní činnost", "Nástup", "Večerka")
+
+    var programMorning      by remember { mutableStateOf("") }
+    var programAfternoon    by remember { mutableStateOf("") }
+    var programEvening      by remember { mutableStateOf("") }
+    var programNight        by remember { mutableStateOf("") }
+
+    val switchStateWarmUp    = remember { mutableStateOf(true) }
+    val switchStateSummon    = remember { mutableStateOf(true) }
+
+    val wakeUpTime           = rememberTimePickerState(8, 0, true)
+    val lightsOut            = rememberTimePickerState(22, 30, true)
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Section(title = fields[currentFieldIndex]) {
+                when (currentFieldIndex) {
+                    1, 6 -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Bude se konat:")
+                            if (currentFieldIndex == 1) {
+                                Switch(
+                                    checked = switchStateWarmUp.value,
+                                    onCheckedChange = { isChecked ->
+                                        switchStateWarmUp.value = isChecked
+                                    }
+                                )
+                            }
+                            if (currentFieldIndex == 6) {
+                                Switch(
+                                    checked = switchStateSummon.value,
+                                    onCheckedChange = { isChecked ->
+                                        switchStateSummon.value = isChecked
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    0, 7 -> {
+                        if (currentFieldIndex == 0) { TimePicker(state = wakeUpTime) }
+                        if (currentFieldIndex == 7) { TimePicker(state = lightsOut)  }
+                    }
+                    else -> {
+                        OutlinedTextField(
+                            value = when(currentFieldIndex-2) { 0->programMorning 1->programAfternoon 2->programEvening 3->programNight else -> "" },
+                            onValueChange = { text -> when(currentFieldIndex-2) { 0->programMorning=text 1->programAfternoon=text 2->programEvening=text else->programNight=text } },
+                            label = { Text(text = fields[currentFieldIndex]) },
+                            readOnly = false,
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                            keyboardActions = KeyboardActions(onNext = {
+                                currentFieldIndex =
+                                    (currentFieldIndex + 1).coerceAtMost(fields.size - 1)
+                                if (currentFieldIndex == 1 || currentFieldIndex == 6) {
+                                    keyboardController?.hide()
+                                }
+                            })
+                        )
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Button(
+                onClick = {
+                    currentFieldIndex = (currentFieldIndex - 1).coerceAtLeast(0)
+                },
+                enabled = currentFieldIndex > 0,
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                Text("Předchozí")
+            }
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            if (currentFieldIndex != fields.size - 1) {
+                Button(
+                    onClick = {
+                        currentFieldIndex = (currentFieldIndex + 1).coerceAtMost(fields.size - 1)
+                    },
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    Text("Další")
+                }
+            }
+            else {
+                Button(
+                    onClick = {
+                        onCreate(
+                            DayPlan(
+                                wakeUp = Activity(startTime = convertToTimestamp(wakeUpTime).toString()),
+
+                                warmUp = Activity(visible = switchStateWarmUp.value),
+                                summon = Activity(visible = switchStateSummon.value),
+
+                                programMorning = Activity(name = programMorning),
+                                programAfternoon = Activity(name = programAfternoon),
+                                programEvening = Activity(name = programEvening),
+                                programNight = Activity(name = programNight),
+
+                                lightsOut = Activity(startTime = convertToTimestamp(lightsOut).toString()
+                                )
+                            )
+                        )
+                        onDismiss()
+                    },
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    Text("Dokončit")
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun ActivityList(activityList: List<Activity?>) {
     Column {
-        activityList.forEach {
-            if (it != null) {
+        activityList.forEach { activity ->
+            if (activity != null && activity.visible == true) {
                 DesignedCard(
-                    title = it.name ?: "Nepojmenovaná aktivita",
-                    topic = it.type,
-                    startTime = it.startTime,
-                    endTime = it.endTime,
+                    title = activity.name ?: "Nepojmenovaná aktivita",
+                    topic = activity.type,
+                    startTime = activity.startTime,
+                    endTime = activity.endTime,
                     timeInDayFormat = false
                 )
             }
